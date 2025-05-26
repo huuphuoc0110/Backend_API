@@ -32,7 +32,9 @@ app.use(morgan("common"));
 app.get("/api", (req,res) =>{
     res.status(200).json("Hello");
 })
-
+app.get("/", (req, res) => {
+    res.send("Server is running!");
+});
 
 //ROUTES
 app.use("/v1/users", usersRoute);
