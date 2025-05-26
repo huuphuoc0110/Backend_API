@@ -17,26 +17,28 @@ const usersController = {
     },
     getAllUsers: async (req, res) => {
         try {
-            const { username, password } = req.query;
-            const { email } = req.query;
-            const { _id } = req.query;
-            let users;
+            const { username, password, email, _id } = req.query;
+            let users = [];
 
             if (username && password) {
-                users = await Users.findOne({ username, password });
-            } else if(email){
-                users = await Users.findOne({ email });
-            } else if(_id){
-                users = await Users.findOne({ _id });
-            }else{
-                users = await Users.find().populate('gateways');
+                const user = await Users.findOne({ username, password });
+                if (user) users.push(user); // thêm vào mảng nếu có
+            } else if (email) {
+                const user = await Users.findOne({ email });
+                if (user) users.push(user);
+            } else if (_id) {
+                const user = await Users.findOne({ _id });
+                if (user) users.push(user);
+            } else {
+                users = await Users.find().populate('gateways'); // trả về mảng luôn
             }
 
-            res.status(200).json(users);
+            res.status(200).json(users); // luôn là mảng []
         } catch (err) {
             res.status(500).json({ message: 'Lỗi server', error: err.message });
         }
     },
+
 
     updateUsers: async (req, res) => {
         try {
