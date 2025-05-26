@@ -1,0 +1,3 @@
+#Push lên github thì những file này người khác sẽ không thấy
+.env
+.node_modules
