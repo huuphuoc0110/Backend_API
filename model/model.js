@@ -11,7 +11,7 @@ const usersSchema = new mongoose.Schema({
         required: true,
     },
     phone: {
-        type: Number,
+        type: String,
         required: true,
     },
     email: {
@@ -35,9 +35,18 @@ const usersSchema = new mongoose.Schema({
     },
     home: {
         type: String,
+    },
+    id: { 
+        type: String
     }
 });
 
+usersSchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
 
 const gatewaysSchema = new mongoose.Schema({
     users:
@@ -51,13 +60,13 @@ const gatewaysSchema = new mongoose.Schema({
     },
     gatewayName: {
         type: String,
-        require: true 
+        require: true
     },
-    gatewayAddress:{
+    gatewayAddress: {
         type: String,
         require: true
     },
-    gatewayCreateDay:{
+    gatewayCreateDay: {
         type: String,
         require: true
     }
