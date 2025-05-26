@@ -9,6 +9,8 @@ router.post("/", usersController.addUsers);
 //Find user
 router.get("/", usersController.getAllUsers);
 
+
 router.patch("/:id", usersController.updateUsers);
+
 
 module.exports = router;

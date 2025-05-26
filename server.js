@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const dotenv = require("dotenv");
 const usersRoute = require("./routes/users");
 const gatewaysRoute = require("./routes/gateways");
+
 dotenv.config();
 
 mongoose.connect(process.env.MONGODB_URL, {
