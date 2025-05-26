@@ -26,9 +26,6 @@ const usersController = {
             } else if (email) {
                 const user = await Users.findOne({ email });
                 if (user) users.push(user);
-            } else if (_id) {
-                const user = await Users.findOne({ _id });
-                if (user) users.push(user);
             } else {
                 users = await Users.find().populate('gateways'); // trả về mảng luôn
             }
@@ -49,7 +46,14 @@ const usersController = {
             res.status(500).json(err); //HTTP request code
         };
     },
-
+    findAnUsers: async (req, res) => {
+        try {
+            const users = await Users.findOne({ _id: req.params.id });
+            res.status(200).json(users);
+        } catch (err) {
+            res.status(500).json(err); //HTTP request code
+        };
+    },
 };
 
 module.exports = usersController;

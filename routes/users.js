@@ -8,7 +8,8 @@ router.post("/", usersController.addUsers);
 
 //Find user
 router.get("/", usersController.getAllUsers);
-
+//Find an users
+router.get("/:id", usersController.findAnUsers);
 
 router.patch("/:id", usersController.updateUsers);
 
