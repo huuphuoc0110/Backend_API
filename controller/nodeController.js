@@ -20,10 +20,10 @@ const nodeController = {
 
     getAllNode: async (req, res) => {
         try {
-            const { gateways } = req.query;
+            const { gatewayId } = req.query;
             let node = [];
-            if (gateways) {
-                node = await Node.find({ gateways });
+            if (gatewayId) {
+                node = await Node.find({ gatewayId });
             } else {
                 node = await Node.find();
             }
