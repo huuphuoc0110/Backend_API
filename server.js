@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const dotenv = require("dotenv");
 const usersRoute = require("./routes/users");
 const gatewaysRoute = require("./routes/gateways");
+const nodeRoute = require("./routes/node");
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.get("/", (req, res) => {
 //ROUTES
 app.use("/v1/users", usersRoute);
 app.use("/v1/gateways", gatewaysRoute);
+app.use("/v1/node", nodeRoute);
 
 
 app.listen(8000, () => {

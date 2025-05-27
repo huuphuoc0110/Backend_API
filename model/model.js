@@ -41,13 +41,6 @@ const usersSchema = new mongoose.Schema({
     }
 });
 
-usersSchema.pre('save', function (next) {
-    if (!this.id) {
-        this.id = this._id.toString();
-    }
-    next();
-});
-
 const gatewaysSchema = new mongoose.Schema({
     users:
     {
@@ -69,10 +62,79 @@ const gatewaysSchema = new mongoose.Schema({
     gatewayCreateDay: {
         type: String,
         require: true
+    },
+    node:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Node"
+    }],
+    id: { 
+        type: String
+    }
+});
+
+const nodeSchema = new mongoose.Schema({
+    gateways:
+    {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Gateways"
+    },
+    nodePosition:
+    {
+        type: String,
+        require: true
+    },
+    nodeCreatedDay:
+    {
+        type: String,
+        require: true
+    },
+    nodeAddh:
+    {
+        type: String,
+        require: true
+    },
+    nodeAddl:
+    {
+        type: String,
+        require: true
+    },
+    nodeDesc:{
+        type: String,
+        require: true
+    },
+    nodeAddress:{
+        type: String,
+        require: true
+    },
+    id: { 
+        type: String
     }
 })
 
+//Copy id tu truong _id
+usersSchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
+
+gatewaysSchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
+
+nodeSchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
+
 let Users = mongoose.model("Users", usersSchema);
 let Gateways = mongoose.model("Gateways", gatewaysSchema);
+let Node = mongoose.model("Node", nodeSchema);
 
-module.exports = { Users, Gateways }; 
+module.exports = { Users, Gateways, Node }; 

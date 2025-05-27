@@ -1,6 +1,6 @@
 //Controller sẽ ghi chi tiết response lại những gì khi api được gọi
 
-const { Users, Gateways } = require("../model/model");
+const { Users, Gateways, Node } = require("../model/model");
 const bcrypt = require('bcrypt'); // Thêm bcrypt nếu mật khẩu được băm
 
 const usersController = {
@@ -13,11 +13,11 @@ const usersController = {
         } catch (err) {
             res.status(500).json(err); //HTTP request code
         };
-        // res.status(200).json(req.body);
     },
+    
     getAllUsers: async (req, res) => {
         try {
-            const { username, password, email, _id } = req.query;
+            const { username, password, email} = req.query;
             let users = [];
 
             if (username && password) {
@@ -36,16 +36,15 @@ const usersController = {
         }
     },
 
-
     updateUsers: async (req, res) => {
         try {
             const users = await Users.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
-            // await users.updateOne({$set: req.body}, { new: true });
             res.status(200).json(users);
         } catch (err) {
             res.status(500).json(err); //HTTP request code
         };
     },
+
     findAnUsers: async (req, res) => {
         try {
             const users = await Users.findOne({ _id: req.params.id });
