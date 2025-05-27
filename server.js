@@ -41,7 +41,7 @@ app.get("/", (req, res) => {
 //ROUTES
 app.use("/v1/users", usersRoute);
 app.use("/v1/gateways", gatewaysRoute);
-app.use("/v1/node", nodeRoute);
+app.use("/v1/nodes", nodeRoute);
 
 
 app.listen(8000, () => {
