@@ -36,7 +36,7 @@ const usersSchema = new mongoose.Schema({
     home: {
         type: String,
     },
-    id: { 
+    id: {
         type: String
     }
 });
@@ -63,11 +63,11 @@ const gatewaysSchema = new mongoose.Schema({
         type: String,
         require: true
     },
-    nodeId:[{
+    nodeId: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Node"
     }],
-    id: { 
+    id: {
         type: String
     }
 });
@@ -77,6 +77,11 @@ const nodeSchema = new mongoose.Schema({
     {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Gateways"
+    },
+    name: 
+    {
+        type: String,
+        require: true
     },
     nodePosition:
     {
@@ -98,15 +103,15 @@ const nodeSchema = new mongoose.Schema({
         type: String,
         require: true
     },
-    nodeDesc:{
+    nodeDesc: {
         type: String,
         require: true
     },
-    nodeAddress:{
+    nodeAddress: {
         type: String,
         require: true
     },
-    id: { 
+    id: {
         type: String
     }
 })
