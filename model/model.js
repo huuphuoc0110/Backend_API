@@ -26,7 +26,7 @@ const usersSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    gateways: [{
+    gatewayId: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Gateways"
     }],
@@ -63,7 +63,7 @@ const gatewaysSchema = new mongoose.Schema({
         type: String,
         require: true
     },
-    node:[{
+    nodeId:[{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Node"
     }],
