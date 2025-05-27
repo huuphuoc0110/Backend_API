@@ -42,7 +42,7 @@ const usersSchema = new mongoose.Schema({
 });
 
 const gatewaysSchema = new mongoose.Schema({
-    users:
+    userId:
     {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Users"
