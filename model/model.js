@@ -114,7 +114,20 @@ const nodeSchema = new mongoose.Schema({
     id: {
         type: String
     }
-})
+});
+const newGatewaySchema = new mongoose.Schema({
+    wifiName:{
+        type: String,
+        require: true
+    },
+    gatewayMac:{
+        type: String,
+        require: true  
+    },
+    id: {
+        type: String
+    }
+});
 
 //Copy id tu truong _id
 usersSchema.pre('save', function (next) {
@@ -138,8 +151,16 @@ nodeSchema.pre('save', function (next) {
     next();
 });
 
+newGatewaySchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
+
 let Users = mongoose.model("Users", usersSchema);
 let Gateways = mongoose.model("Gateways", gatewaysSchema);
 let Node = mongoose.model("Node", nodeSchema);
+let newGateway = mongoose.model("newGateway", newGatewaySchema);
 
-module.exports = { Users, Gateways, Node }; 
+module.exports = { Users, Gateways, Node, newGateway }; 

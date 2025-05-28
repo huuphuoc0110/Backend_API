@@ -6,12 +6,14 @@ const mongoose = require("mongoose");
 var bodyParser = require("body-parser");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
+const mqtt = require("mqtt");
 const usersRoute = require("./routes/users");
 const gatewaysRoute = require("./routes/gateways");
 const nodeRoute = require("./routes/node");
-
+const newGatewayRoute = require("./routes/newGateway");
 dotenv.config();
 
+//Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -23,6 +25,7 @@ mongoose.connect(process.env.MONGODB_URL, {
   console.error("❌ MongoDB connection error:", err);
 });
 
+require('./mqtt/sub'); // chạy script subscriber khi app khởi động
 
 app.use(bodyParser.json({limit:"50mb"}));
 app.use(cors());
@@ -42,7 +45,7 @@ app.get("/", (req, res) => {
 app.use("/v1/users", usersRoute);
 app.use("/v1/gateways", gatewaysRoute);
 app.use("/v1/nodes", nodeRoute);
-
+app.use("/v1/newGateway", newGatewayRoute);
 
 app.listen(8000, () => {
     console.log("Server is running");
