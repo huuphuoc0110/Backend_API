@@ -16,15 +16,19 @@ client.on('message', async (topic, message) => {
   console.log(`[Subscriber] ${topic}: ${payload}`);
 
   try {
-    const data = JSON.parse(payload); // parse JSON
+    const [wifiName, gatewayMac] = payload.split('/');
+
+    if (!wifiName || !gatewayMac) {
+      throw new Error('Invalid message format. Expected format: wifiName/gatewayMac');
+    }
 
     const saved = await newGateway.create({
-      wifiName: data.wifiName,
-      gatewayMac: data.gatewayMac,
+      wifiName,
+      gatewayMac,
     });
 
     console.log('Message saved:', saved._id);
   } catch (err) {
-    console.error('Invalid message or DB error:', err.message);
+    console.error('Parse or DB error:', err.message);
   }
 });
