@@ -9,15 +9,14 @@ const gatewaysController = {
         try {
             const newGateways = new Gateways(req.body);
             const saveGateways = await newGateways.save();
-            if (req.body.users) { //Cap nhat lien ket giua gateway va users thong qua id cua users
-                const users = Users.find({ _id: req.body.users });
-                await users.updateOne({ $push: { gateways: saveGateways._id } });
+            if (req.body.userId) {
+                const users = Users.findById(req.body.userId);
+                await users.updateOne({ $push: { gatewayId: saveGateways._id } });
             }
             res.status(200).json(saveGateways);
         } catch (err) {
             res.status(500).json(err); //HTTP request code
         };
-        // res.status(200).json(req.body);
     },
 
     getAllGateways: async (req, res) => {
@@ -55,6 +54,14 @@ const gatewaysController = {
             );
             await Gateways.findByIdAndDelete(req.params.id);
             res.status(200).json("Delete succesfully");
+        } catch (err) {
+            res.status(500).json(err); //HTTP request code
+        };
+    },
+    findAnGateway: async (req, res) => { 
+        try {
+            const gateways = await Gateways.findById(req.params.id);
+            res.status(200).json(gateways);
         } catch (err) {
             res.status(500).json(err); //HTTP request code
         };

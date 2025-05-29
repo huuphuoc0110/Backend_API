@@ -4,27 +4,27 @@ const mongoose = require("mongoose");
 const usersSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true,
+        requiredd: true,
     },
     birth: {
         type: String,
-        required: true,
+        requiredd: true,
     },
     phone: {
         type: String,
-        required: true,
+        requiredd: true,
     },
     email: {
         type: String,
-        required: true,
+        requiredd: true,
     },
     username: {
         type: String,
-        required: true,
+        requiredd: true,
     },
     password: {
         type: String,
-        required: true,
+        requiredd: true,
     },
     gatewayId: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -42,26 +42,26 @@ const usersSchema = new mongoose.Schema({
 });
 
 const gatewaysSchema = new mongoose.Schema({
-    userId:
+    userID:
     {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Users"
     },
     projectName: {
         type: String,
-        require: true
+        required: true
     },
     gatewayName: {
         type: String,
-        require: true
+        required: true
     },
     gatewayAddress: {
         type: String,
-        require: true
+        required: true
     },
     gatewayCreateDay: {
         type: String,
-        require: true
+        required: true
     },
     nodeId: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -78,55 +78,60 @@ const nodeSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Gateways"
     },
-    name: 
+    name:
     {
         type: String,
-        require: true
+        required: true
     },
     nodePosition:
     {
         type: String,
-        require: true
+        required: true
     },
     nodeCreatedDay:
     {
         type: String,
-        require: true
+        required: true
     },
     nodeAddh:
     {
         type: String,
-        require: true
+        required: true
     },
     nodeAddl:
     {
         type: String,
-        require: true
+        required: true
     },
     nodeDesc: {
         type: String,
-        require: true
+        required: true
     },
     nodeAddress: {
         type: String,
-        require: true
+        required: true
     },
     id: {
         type: String
     }
 });
 const newGatewaySchema = new mongoose.Schema({
-    wifiName:{
+    wifiName: {
         type: String,
-        require: true
+        required: true
     },
-    gatewayMac:{
+    gatewayMac: {
         type: String,
-        require: true  
+        required: true
     },
     id: {
         type: String
-    }
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+        index: { expires: 600 }  // TTL index: tự động xóa sau 60 giây
+    },
 });
 
 //Copy id tu truong _id

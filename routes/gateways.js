@@ -8,7 +8,8 @@ router.post("/", gatewaysController.addGateways);
 
 //Find gateways
 router.get("/", gatewaysController.getAllGateways);
-
+//Find gateways by ID
+ router.get("/:id", gatewaysController.findAnGateway)
 //Replace gateways
 router.patch("/:id", gatewaysController.updateGateways);
 
