@@ -129,6 +129,81 @@ const newGatewaySchema = new mongoose.Schema({
     },
 });
 
+const deviceSchema = new mongoose.Schema({
+    id:
+    {
+        type: String
+    },
+    gatewayId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Gateways"
+    },
+    nodeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Node"
+    },
+    name:
+    {
+        type: String,
+        required: true        
+    },
+    pin:
+    {
+        type: String,
+        required: true             
+    },
+    description:
+    {
+        type: String
+    },
+    status:
+    {
+        type: Boolean,
+        required: true   
+    }
+});
+const schedulesSchema = new mongoose.Schema({
+    id:
+    {
+        type: String
+    },
+    gatewayId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Gateways"
+    },
+    nodeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Node"
+    },
+    deviceName:
+    {
+        type: String,
+        required: true        
+    },
+    devicePin:
+    {
+        type: String,
+        required: true             
+    },
+    dailyRepeat:
+    {
+        type: Boolean,
+        required: true  
+    },
+    status:
+    {
+        type: Boolean,
+        required: true   
+    },
+    startTime:
+    {
+        type: Date
+    },
+    endTime:
+    {
+        type: Date
+    },
+});
 const sensorSchema = new mongoose.Schema({
     id:
     {
@@ -212,6 +287,19 @@ sensorSchema.pre('save', function (next) {
     }
     next();
 });
+deviceSchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
+schedulesSchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
+
 
 
 let Users = mongoose.model("Users", usersSchema);
@@ -219,5 +307,7 @@ let Gateways = mongoose.model("Gateways", gatewaysSchema);
 let Node = mongoose.model("Node", nodeSchema);
 let newGateway = mongoose.model("newGateway", newGatewaySchema);
 let Sensors = mongoose.model("Sensors", sensorSchema);
+let Devices = mongoose.model("Devices", deviceSchema);
+let Schedules = mongoose.model("Schedules", schedulesSchema);
 
-module.exports = { Users, Gateways, Node, newGateway, Sensors }; 
+module.exports = { Users, Gateways, Node, newGateway, Sensors, Devices, Schedules }; 
