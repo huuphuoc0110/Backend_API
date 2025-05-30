@@ -11,6 +11,7 @@ const usersRoute = require("./routes/users");
 const gatewaysRoute = require("./routes/gateways");
 const nodeRoute = require("./routes/node");
 const newGatewayRoute = require("./routes/newGateway");
+const sensorsRoute = require("./routes/sensors");
 dotenv.config();
 
 //Connect to MongoDB
@@ -46,6 +47,7 @@ app.use("/v1/users", usersRoute);
 app.use("/v1/gateways", gatewaysRoute);
 app.use("/v1/nodes", nodeRoute);
 app.use("/v1/newGateway", newGatewayRoute);
+app.use("/v1/sensors", sensorsRoute);
 
 app.listen(8000, () => {
     console.log("Server is running");

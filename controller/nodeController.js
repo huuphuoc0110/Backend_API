@@ -8,9 +8,9 @@ const nodeController = {
         try {
             const newNode = new Node(req.body);
             const saveNode = await newNode.save();
-            if (req.body.gateways) { //Cap nhat lien ket giua gateway va users thong qua id cua users
-                const node = Gateways.find({ _id: req.body.gateways });
-                await node.updateOne({ $push: { node: saveNode._id } });
+            if (req.body.gatewayId) { //Cap nhat lien ket giua gateway va users thong qua id cua users
+                const node = Gateways.find({ _id: req.body.gatewayId });
+                await node.updateOne({ $push: { nodeId: saveNode._id } });
             }
             res.status(200).json(saveNode);
         } catch (err) {

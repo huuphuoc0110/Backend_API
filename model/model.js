@@ -4,27 +4,27 @@ const mongoose = require("mongoose");
 const usersSchema = new mongoose.Schema({
     name: {
         type: String,
-        requiredd: true,
+        required: true,
     },
     birth: {
         type: String,
-        requiredd: true,
+        required: true,
     },
     phone: {
         type: String,
-        requiredd: true,
+        required: true,
     },
     email: {
         type: String,
-        requiredd: true,
+        required: true,
     },
     username: {
         type: String,
-        requiredd: true,
+        required: true,
     },
     password: {
         type: String,
-        requiredd: true,
+        required: true,
     },
     gatewayId: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -78,11 +78,6 @@ const nodeSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Gateways"
     },
-    name:
-    {
-        type: String,
-        required: true
-    },
     nodePosition:
     {
         type: String,
@@ -134,6 +129,54 @@ const newGatewaySchema = new mongoose.Schema({
     },
 });
 
+const sensorSchema = new mongoose.Schema({
+    id:
+    {
+        type: String
+    },
+    gatewayId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Gateways"
+    },
+    nodeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Node"
+    },
+
+    sensorType: {
+        type: String,
+        required: true
+    },
+    data:
+    [{
+        today: {
+            dataMinute: [{
+                time: { type: String },   // hoặc Date cho chuẩn
+                value: { type: String }
+            }],
+            dataHour: [{
+                time: { type: String },
+                value: { type: String }
+            }]
+        },
+
+        pastDay: [{
+            date: { type: String },       // hoặc Date cho chuẩn
+            dataMinute: [{
+                time: { type: String },
+                value: { type: String }
+            }],
+            dataHour: [{
+                time: { type: String },
+                value: { type: String }
+            }]
+        }]
+    }]
+
+});
+
+
+
 //Copy id tu truong _id
 usersSchema.pre('save', function (next) {
     if (!this.id) {
@@ -163,9 +206,18 @@ newGatewaySchema.pre('save', function (next) {
     next();
 });
 
+sensorSchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
+
+
 let Users = mongoose.model("Users", usersSchema);
 let Gateways = mongoose.model("Gateways", gatewaysSchema);
 let Node = mongoose.model("Node", nodeSchema);
 let newGateway = mongoose.model("newGateway", newGatewaySchema);
+let Sensors = mongoose.model("Sensors", sensorSchema);
 
-module.exports = { Users, Gateways, Node, newGateway }; 
+module.exports = { Users, Gateways, Node, newGateway, Sensors }; 
