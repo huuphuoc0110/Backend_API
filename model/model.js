@@ -8,7 +8,6 @@ const usersSchema = new mongoose.Schema({
     },
     birth: {
         type: String,
-        required: true,
     },
     phone: {
         type: String,
@@ -49,15 +48,12 @@ const gatewaysSchema = new mongoose.Schema({
     },
     projectName: {
         type: String,
-        required: true
     },
     gatewayName: {
         type: String,
-        required: true
     },
     gatewayAddress: {
         type: String,
-        required: true
     },
     gatewayCreatedDay: {
         type: String
@@ -75,7 +71,6 @@ const nodeSchema = new mongoose.Schema({
     name:
     {
         type: String,
-        required: true
     },
     gatewayId:
     {
@@ -85,7 +80,7 @@ const nodeSchema = new mongoose.Schema({
     nodePosition:
     {
         type: String,
-        
+
     },
     nodeCreatedDay:
     {
@@ -116,11 +111,9 @@ const nodeSchema = new mongoose.Schema({
 const newGatewaySchema = new mongoose.Schema({
     wifiName: {
         type: String,
-        required: true
     },
     gatewayMac: {
         type: String,
-        required: true
     },
     id: {
         type: String
@@ -147,13 +140,11 @@ const deviceSchema = new mongoose.Schema({
     },
     name:
     {
-        type: String,
-        required: true        
+        type: String,      
     },
     pin:
     {
-        type: String,
-        required: true             
+        type: String,          
     },
     description:
     {
@@ -162,7 +153,6 @@ const deviceSchema = new mongoose.Schema({
     status:
     {
         type: Boolean,
-        required: true   
     }
 });
 const schedulesSchema = new mongoose.Schema({
@@ -180,23 +170,19 @@ const schedulesSchema = new mongoose.Schema({
     },
     deviceName:
     {
-        type: String,
-        required: true        
+        type: String,     
     },
     devicePin:
     {
-        type: String,
-        required: true             
+        type: String,         
     },
     dailyRepeat:
     {
         type: Boolean,
-        required: true  
     },
     status:
     {
-        type: Boolean,
-        required: true   
+        type: Boolean, 
     },
     startTime:
     {
@@ -223,7 +209,6 @@ const sensorSchema = new mongoose.Schema({
 
     sensorType: {
         type: String,
-        required: true
     },
     data:
     [{
