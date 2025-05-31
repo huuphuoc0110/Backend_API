@@ -85,7 +85,7 @@ const nodeSchema = new mongoose.Schema({
     nodePosition:
     {
         type: String,
-        required: true
+        
     },
     nodeCreatedDay:
     {
@@ -103,11 +103,11 @@ const nodeSchema = new mongoose.Schema({
     },
     nodeDesc: {
         type: String,
-        required: true
+
     },
     nodeAddress: {
         type: String,
-        required: true
+
     },
     id: {
         type: String
