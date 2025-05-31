@@ -72,6 +72,11 @@ const gatewaysSchema = new mongoose.Schema({
 });
 
 const nodeSchema = new mongoose.Schema({
+    name:
+    {
+        type: String,
+        required: true
+    },
     gatewayId:
     {
         type: mongoose.Schema.Types.ObjectId,
