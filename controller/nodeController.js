@@ -52,8 +52,15 @@ const nodeController = {
         } catch (err) {
             res.status(500).json(err); //HTTP request code
         };
+    },
+    getNodeId: async (req, res) => {
+        try {
+            const node = await Node.findById(req.params.id);
+            res.status(200).json(node);
+        } catch (err) {
+            res.status(500).json(err); //HTTP request code
+        };
     }
-
 };
 
 module.exports = nodeController;

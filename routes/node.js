@@ -9,6 +9,8 @@ router.post("/", nodeController.addNode);
 //Get nhiều node và tìm node theo id gateways
 router.get("/", nodeController.getAllNode);
 
+router.get("/:id", nodeController.getNodeId);
+
 //Xóa node lẫn id node trong gateways
 router.delete("/:id", nodeController.deleteNode);
 
