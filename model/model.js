@@ -121,7 +121,7 @@ const newGatewaySchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-        index: { expires: 600 }  // TTL index: tự động xóa sau 60 giây
+        index: { expires: 6000 }  // TTL index: tự động xóa sau 60 giây
     },
 });
 
