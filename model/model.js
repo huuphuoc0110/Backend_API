@@ -84,8 +84,7 @@ const nodeSchema = new mongoose.Schema({
     },
     nodeCreatedDay:
     {
-        type: String,
-        required: true
+        type: String
     },
     nodeAddh:
     {
