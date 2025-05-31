@@ -60,8 +60,7 @@ const gatewaysSchema = new mongoose.Schema({
         required: true
     },
     gatewayCreateDay: {
-        type: String,
-        required: true
+        type: String
     },
     nodeId: [{
         type: mongoose.Schema.Types.ObjectId,
