@@ -41,7 +41,7 @@ const usersSchema = new mongoose.Schema({
 });
 
 const gatewaysSchema = new mongoose.Schema({
-    userID:
+    userId:
     {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Users"
