@@ -7,6 +7,6 @@ const router = require("express").Router();
 router.get("/", newGatewayController.getNewGateways);
 
 //Replace gateways
-router.patch("/:id", newGatewayController.updateGateways);
+router.patch("/:_id", newGatewayController.updateGateways);
 
 module.exports = router;

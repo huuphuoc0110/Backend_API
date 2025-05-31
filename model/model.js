@@ -109,19 +109,18 @@ const nodeSchema = new mongoose.Schema({
     }
 });
 const newGatewaySchema = new mongoose.Schema({
-    wifiName: {
-        type: String,
-    },
-    gatewayMac: {
-        type: String,
-    },
     id: {
-        type: String
+        type: String,
+        default: function () {
+            return this._id.toString();
+        }
     },
+    wifiName: String,
+    gatewayMac: String,
     createdAt: {
         type: Date,
         default: Date.now,
-        index: { expires: 6000 }  // TTL index: tự động xóa sau 60 giây
+        index: { expires: 6000 }, // TTL 60 giây
     },
 });
 
@@ -140,11 +139,11 @@ const deviceSchema = new mongoose.Schema({
     },
     name:
     {
-        type: String,      
+        type: String,
     },
     pin:
     {
-        type: String,          
+        type: String,
     },
     description:
     {
@@ -170,11 +169,11 @@ const schedulesSchema = new mongoose.Schema({
     },
     deviceName:
     {
-        type: String,     
+        type: String,
     },
     devicePin:
     {
-        type: String,         
+        type: String,
     },
     dailyRepeat:
     {
@@ -182,7 +181,7 @@ const schedulesSchema = new mongoose.Schema({
     },
     status:
     {
-        type: Boolean, 
+        type: Boolean,
     },
     startTime:
     {
@@ -211,30 +210,30 @@ const sensorSchema = new mongoose.Schema({
         type: String,
     },
     data:
-    [{
-        today: {
-            dataMinute: [{
-                time: { type: String },   // hoặc Date cho chuẩn
-                value: { type: String }
-            }],
-            dataHour: [{
-                time: { type: String },
-                value: { type: String }
-            }]
-        },
+        [{
+            today: {
+                dataMinute: [{
+                    time: { type: String },   // hoặc Date cho chuẩn
+                    value: { type: String }
+                }],
+                dataHour: [{
+                    time: { type: String },
+                    value: { type: String }
+                }]
+            },
 
-        pastDay: [{
-            date: { type: String },       // hoặc Date cho chuẩn
-            dataMinute: [{
-                time: { type: String },
-                value: { type: String }
-            }],
-            dataHour: [{
-                time: { type: String },
-                value: { type: String }
+            pastDay: [{
+                date: { type: String },       // hoặc Date cho chuẩn
+                dataMinute: [{
+                    time: { type: String },
+                    value: { type: String }
+                }],
+                dataHour: [{
+                    time: { type: String },
+                    value: { type: String }
+                }]
             }]
         }]
-    }]
 
 });
 
