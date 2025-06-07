@@ -1,9 +1,59 @@
 // mqtt/client.js
 const { Sensors, Gateways, Node } = require("../model/model");
 const mongoose = require("mongoose");
+const cron = require('node-cron');
+const moment = require('moment-timezone');
 
 const mqtt = require('mqtt');
-const client = mqtt.connect('mqtt://broker.hivemq.com');
+const options = {
+  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+  port: 8883, // Port cho MQTT over TLS (bảo mật)
+  protocol: 'mqtts',
+  username: 'VanTu1208',
+  password: 'Thuhoai17'
+};
+
+const client = mqtt.connect(options);
+
+function calculateHourlyAverage(todayBlock) {
+  const hourlyMap = {};
+
+  for (const entry of todayBlock.dataMinute) {
+    // parse time theo timezone VN
+    const time = moment.tz(entry.time, 'Asia/Ho_Chi_Minh').toDate();
+    // lấy chuỗi yyyy-mm-ddThh làm key giờ
+    const hourKey = moment(time).format('YYYY-MM-DDTHH'); // ví dụ "2025-06-02T10"
+
+    if (!hourlyMap[hourKey]) {
+      hourlyMap[hourKey] = {
+        sum: 0,
+        count: 0
+      };
+    }
+
+    hourlyMap[hourKey].sum += parseFloat(entry.value);
+    hourlyMap[hourKey].count += 1;
+  }
+
+  const hourlyAverages = [];
+
+  for (const hour in hourlyMap) {
+    const { sum, count } = hourlyMap[hour];
+    const avg = sum / count;
+
+    // tạo thời gian đúng đầu giờ theo VN timezone và convert về ISO string chuẩn UTC
+    const timeVN = moment.tz(hour, 'YYYY-MM-DDTHH', 'Asia/Ho_Chi_Minh')
+      .startOf('hour')
+      .toDate();
+
+    hourlyAverages.push({
+      time: timeVN,
+      value: avg.toFixed(2)
+    });
+  }
+
+  return hourlyAverages;
+}
 
 client.on('connect', () => {
   console.log('MQTT Connected');
@@ -44,15 +94,10 @@ client.on('message', async (topic, message) => {
   };
 
   //___________________________________________________________________________//
-  //___________________________________________________________________________//
-  //___________________________________________________________________________//
-  //___________________________________________________________________________//
-  //___________________________________________________________________________//
   if (topic.endsWith('/sensors/response')) {
     const parts = topic.split('/');
     console.log(parts);
     if (parts.length === 5) {
-      // destruct 3 phần đầu, bỏ 2 phần cuối (hoặc bạn cần dùng phần nào thì sửa)
       const [gatewayName, nodeAddh, nodeAddl] = parts;
 
       try {
@@ -70,93 +115,47 @@ client.on('message', async (topic, message) => {
           console.warn('⚠️ Node không tồn tại!');
           return;
         }
-
-        const now = new Date();
-        const timeStr = now.toISOString();
-        const currentDateStr = timeStr.slice(0, 10); // YYYY-MM-DD
-
-        // Thời gian bắt đầu giờ hiện tại (UTC)
-        const hourStart = new Date(Date.UTC(
-          now.getUTCFullYear(),
-          now.getUTCMonth(),
-          now.getUTCDate(),
-          now.getUTCHours(), 0, 0, 0
-        ));
-        const hourStartStr = hourStart.toISOString();
-        const nextHourStr = new Date(hourStart.getTime() + 3600000).toISOString();
-
-        for (const sensor of sensorList) {
-          const pin = sensor.Pin.toString();
-          const value = sensor.Value.toString();
-
-          const existingSensor = await Sensors.findOne({
+        for (const sensorData of sensorList) {
+          const pin = sensorData.Pin;
+          const value = sensorData.Value;
+          const timeNow = moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD HH:mm:ss');
+          console.log(timeNow);
+          const sensor = await Sensors.findOne({
+            sensorType: pin,
             gatewayId: gateway._id,
-            nodeId: nodes._id,
-            sensorType: pin
+            nodeId: nodes._id
           });
 
-          if (!existingSensor) {
-            console.warn(`⚠️ Sensor không tồn tại (Pin: ${pin}), bỏ qua.`);
+          if (!sensor) {
+            console.warn(`⚠️ Không tìm thấy sensor với PIN: ${pin}`);
             continue;
           }
 
-          // Khởi tạo cấu trúc nếu thiếu
-          if (!existingSensor.data) existingSensor.data = [];
-          if (existingSensor.data.length === 0) {
-            existingSensor.data.push({
-              today: { dataMinute: [], dataHour: [] },
+          if (!sensor.data || sensor.data.length === 0) {
+            sensor.data = [{
+              today: [{
+                dataMinute: [],
+                dataHour: []
+              }],
               pastDay: []
-            });
-          } else {
-            if (!existingSensor.data[0].today) existingSensor.data[0].today = { dataMinute: [], dataHour: [] };
-            if (!existingSensor.data[0].pastDay) existingSensor.data[0].pastDay = [];
+            }];
           }
 
-          // 1. Thêm dữ liệu mới vào today.dataMinute
-          existingSensor.data[0].today.dataMinute.push({ time: timeStr, value });
-
-          // 2. Cập nhật dataHour trong today
-          const todayMinutesInHour = existingSensor.data[0].today.dataMinute.filter(item =>
-            item.time >= hourStartStr && item.time < nextHourStr
-          );
-          const sumToday = todayMinutesInHour.reduce((acc, item) => acc + parseFloat(item.value), 0);
-          const avgToday = sumToday / todayMinutesInHour.length;
-
-          let hourRecordToday = existingSensor.data[0].today.dataHour.find(item => item.time === hourStartStr);
-          if (hourRecordToday) {
-            hourRecordToday.value = avgToday.toFixed(2);
-            hourRecordToday.time = hourStartStr;
-          } else {
-            existingSensor.data[0].today.dataHour.push({ time: hourStartStr, value: avgToday.toFixed(2) });
+          const todayBlock = sensor.data[0].today[0];
+          if (!todayBlock) {
+            console.warn(`⚠️ Sensor PIN ${pin} không có today block`);
+            continue;
           }
 
-          // 3. Tìm hoặc tạo đối tượng pastDay cho ngày hiện tại
-          let pastDayRecord = existingSensor.data[0].pastDay.find(item => item.date === currentDateStr);
-          if (!pastDayRecord) {
-            pastDayRecord = { date: currentDateStr, dataMinute: [], dataHour: [] };
-            existingSensor.data[0].pastDay.push(pastDayRecord);
-          }
+          todayBlock.dataMinute.push({
+            time: timeNow,
+            value: value.toString()
+          });
 
-          // 4. Thêm dữ liệu mới vào pastDay.dataMinute
-          pastDayRecord.dataMinute.push({ time: timeStr, value });
+          todayBlock.dataHour = calculateHourlyAverage(todayBlock);
 
-          // 5. Cập nhật dataHour trong pastDay
-          const pastDayMinutesInHour = pastDayRecord.dataMinute.filter(item =>
-            item.time >= hourStartStr && item.time < nextHourStr
-          );
-          const sumPastDay = pastDayMinutesInHour.reduce((acc, item) => acc + parseFloat(item.value), 0);
-          const avgPastDay = sumPastDay / pastDayMinutesInHour.length;
-
-          let hourRecordPastDay = pastDayRecord.dataHour.find(item => item.time === hourStartStr);
-          if (hourRecordPastDay) {
-            hourRecordPastDay.value = avgPastDay.toFixed(2);
-            hourRecordPastDay.time = hourStartStr;
-          } else {
-            pastDayRecord.dataHour.push({ time: hourStartStr, value: avgPastDay.toFixed(2) });
-          }
-
-          // 6. Lưu lại database
-          await existingSensor.save();
+          await sensor.save();
+          console.log(`✅ Lưu dataMinute cho sensor PIN ${pin}: ${value}`);
         }
       } catch (err) {
         console.error('❌ Lỗi xử lý message hoặc ghi DB:', err);
@@ -166,6 +165,50 @@ client.on('message', async (topic, message) => {
       console.warn('❗Topic không đúng định dạng:', topic);
     }
   }
-
-
 });
+
+const moveTodayToPastDay = async () => {
+  console.log('🕛 Chạy cron chuyển today → pastDay theo giờ VN');
+
+  const sensors = await Sensors.find();
+
+  for (const sensor of sensors) {
+    if (!sensor.data || sensor.data.length === 0) continue;
+
+    const todayBlock = sensor.data[0].today[0];
+    if (!todayBlock) continue;
+
+    if (
+      (!todayBlock.dataMinute || todayBlock.dataMinute.length === 0) &&
+      (!todayBlock.dataHour || todayBlock.dataHour.length === 0)
+    ) {
+      continue;
+    }
+
+    sensor.data[0].pastDay.push({
+      date: moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD'),
+      dataMinute: todayBlock.dataMinute || [],
+      dataHour: todayBlock.dataHour || []
+    });
+
+    sensor.data[0].today[0] = {
+      dataMinute: [],
+      dataHour: []
+    };
+
+    await sensor.save();
+    console.log(`✅ Đã chuyển today → pastDay cho sensor ${sensor._id}`);
+  }
+};
+
+cron.schedule('00 00 * * *', async () => {
+  try {
+    await moveTodayToPastDay();
+  } catch (err) {
+    console.error('❌ Cron job lỗi:', err);
+  }
+}, {
+  timezone: "Asia/Ho_Chi_Minh"
+});
+
+module.exports = { moveTodayToPastDay };

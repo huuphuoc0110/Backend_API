@@ -1,0 +1,24 @@
+controller                  
+├─ devicesController.js     
+├─ gatewaysController.js    
+├─ newGatewayController.js  
+├─ nodeController.js        
+├─ schedulesController.js   
+├─ sensorsController.js     
+└─ usersController.js       
+model        
+└─ model.js  
+mqtt       
+└─ sub.js  
+routes            
+├─ devices.js     
+├─ gateways.js    
+├─ newGateway.js  
+├─ node.js        
+├─ schedules.js   
+├─ sensors.js     
+└─ users.js       
+.env
+.gitignore
+package-lock.json
+server.js

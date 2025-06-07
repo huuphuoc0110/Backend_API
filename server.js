@@ -14,6 +14,7 @@ const newGatewayRoute = require("./routes/newGateway");
 const sensorsRoute = require("./routes/sensors");
 const devicesRoute = require("./routes/devices");
 const schedulesRoute = require("./routes/schedules");
+const { moveTodayToPastDay }  = require('./mqtt/sub');
 dotenv.config();
 
 //Connect to MongoDB
@@ -34,8 +35,9 @@ app.use(bodyParser.json({limit:"50mb"}));
 app.use(cors());
 app.use(morgan("common"));
 
-//Connect database
-
+// (async () => {
+//   await moveTodayToPastDay();
+// })();
 
 app.get("/api", (req,res) =>{
     res.status(200).json("Hello");
