@@ -27,7 +27,7 @@ const usersController = {
                 const user = await Users.findOne({ email });
                 if (user) users.push(user);
             } else {
-                users = await Users.find().populate('gateways'); // trả về mảng luôn
+                users = await Users.find().populate('gatewayId'); // trả về mảng luôn
             }
 
             res.status(200).json(users); // luôn là mảng []
