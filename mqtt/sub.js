@@ -1,5 +1,5 @@
 // mqtt/client.js
-const { Sensors, Gateways, Node } = require("../model/model");
+const { Sensors, Gateways, Node, newGateway } = require("../model/model");
 const mongoose = require("mongoose");
 const cron = require('node-cron');
 const moment = require('moment-timezone');
