@@ -106,8 +106,8 @@ const sensorSchema = new mongoose.Schema({
     nodeId: {type: mongoose.Schema.Types.ObjectId,ref: "Node"},
     sensorType: {type: String},
     data:        
-        [{
-            today: [{
+        {
+            today: {
                 dataMinute: [{
                     time: { type: Date },   
                     value: { type: String }
@@ -116,7 +116,7 @@ const sensorSchema = new mongoose.Schema({
                     time: { type: Date },
                     value: { type: String }
                 }]
-            }],
+            },
 
             pastDay: [{
                 date: { type: Date },       
@@ -129,7 +129,7 @@ const sensorSchema = new mongoose.Schema({
                     value: { type: String }
                 }]
             }]
-        }]
+        }
 });
 
 
