@@ -5,17 +5,17 @@ const cron = require('node-cron');
 const moment = require('moment-timezone');
 
 const mqtt = require('mqtt');
-const options = {
-  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-  port: 8883, // Port cho MQTT over TLS (bảo mật)
-  protocol: 'mqtts',
-  username: 'VanTu1208',
-  password: 'Thuhoai17'
-};
+// const options = {
+//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+//   port: 8883, // Port cho MQTT over TLS (bảo mật)
+//   protocol: 'mqtts',
+//   username: 'VanTu1208',
+//   password: 'Thuhoai17'
+// };
 
-const client = mqtt.connect(options);
+// const client = mqtt.connect(options);
 
-// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 
 function calculateHourlyAverage(todayBlock) {
@@ -27,14 +27,17 @@ function calculateHourlyAverage(todayBlock) {
   const hourlyMap = {};
 
   for (const entry of todayBlock.dataMinute) {
-    if (!entry.time || !entry.value) {
+    if (!entry.time || entry.value === undefined) {
       console.warn('Entry thiếu time hoặc value:', entry);
       continue;
     }
 
-    // Chuyển time sang timezone VN
-    const time = moment.tz(entry.time, 'Asia/Ho_Chi_Minh').toDate();
-    const hourKey = moment(time).format('YYYY-MM-DDTHH');
+    // Dùng UTC luôn, không xử lý timezone
+    const time = new Date(entry.time);
+    const hour = new Date(time);
+    hour.setMinutes(0, 0, 0); // reset về đầu giờ
+
+    const hourKey = hour.toISOString(); // dùng ISO string làm key
 
     if (!hourlyMap[hourKey]) {
       hourlyMap[hourKey] = { sum: 0, count: 0 };
@@ -52,22 +55,20 @@ function calculateHourlyAverage(todayBlock) {
 
   const hourlyAverages = [];
 
-  for (const hour in hourlyMap) {
-    const { sum, count } = hourlyMap[hour];
+  for (const hourKey in hourlyMap) {
+    const { sum, count } = hourlyMap[hourKey];
     const avg = sum / count;
 
-    const timeVN = moment.tz(hour, 'YYYY-MM-DDTHH', 'Asia/Ho_Chi_Minh').startOf('hour').toDate();
-
     hourlyAverages.push({
-      time: timeVN,
+      time: new Date(hourKey), // vẫn lưu Date theo UTC
       value: parseFloat(avg.toFixed(2))
     });
   }
 
-  console.log('hourlyAverages:', hourlyAverages);
-
+  console.log('hourlyAverages (UTC):', hourlyAverages);
   return hourlyAverages;
 }
+
 
 
 client.on('connect', () => {

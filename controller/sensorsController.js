@@ -2,6 +2,45 @@
 
 const { Sensors, Gateways, Node } = require("../model/model");
 
+const moment = require('moment-timezone');
+
+function convertToVN(date) {
+    return moment(date).tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD HH:mm:ss");
+}
+
+function formatSensorTime(sensor) {
+    const obj = sensor.toObject();
+
+    // Format today
+    if (obj.data?.today) {
+        obj.data.today.dataMinute = (obj.data.today.dataMinute || []).map(item => ({
+            ...item,
+            time: convertToVN(item.time)
+        }));
+
+        obj.data.today.dataHour = (obj.data.today.dataHour || []).map(item => ({
+            ...item,
+            time: convertToVN(item.time)
+        }));
+    }
+
+    // Format pastDay
+    obj.data.pastDay = (obj.data.pastDay || []).map(day => ({
+        date: convertToVN(day.date),
+        dataMinute: (day.dataMinute || []).map(item => ({
+            ...item,
+            time: convertToVN(item.time)
+        })),
+        dataHour: (day.dataHour || []).map(item => ({
+            ...item,
+            time: convertToVN(item.time)
+        }))
+    }));
+
+    return obj;
+}
+
+
 const sensorsController = {
 
     addSensor: async (req, res) => {
@@ -13,23 +52,28 @@ const sensorsController = {
             res.status(500).json(err); //HTTP request code
         };
     },
-    findSensorByNode: async (req, res) => { 
+
+    findSensorByNode: async (req, res) => {
         try {
             const { nodeId } = req.query;
 
             let sensors = [];
 
-            if ( nodeId ) {
+            if (nodeId) {
                 sensors = await Sensors.find({ nodeId });
             } else {
                 sensors = await Sensors.find()
             }
-            res.status(200).json(sensors);
+
+            const formatted = sensors.map(formatSensorTime);
+            res.status(200).json(formatted);
+            // res.status(200).json(sensors);
         } catch (err) {
             res.status(500).json(err); //HTTP request code
         };
     },
-    findASensor: async (req, res) => { 
+
+    findASensor: async (req, res) => {
         try {
             const sensors = await Sensors.findById(req.params.id);
             res.status(200).json(sensors);
@@ -46,7 +90,7 @@ const sensorsController = {
             res.status(500).json(err); //HTTP request code
         };
     },
- 
+
 };
 
 module.exports = sensorsController;
