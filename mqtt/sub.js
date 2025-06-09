@@ -15,23 +15,38 @@ const options = {
 
 const client = mqtt.connect(options);
 
+// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+
+
 function calculateHourlyAverage(todayBlock) {
+  if (!todayBlock || !Array.isArray(todayBlock.dataMinute) || todayBlock.dataMinute.length === 0) {
+    console.log('dataMinute is empty or invalid');
+    return [];
+  }
+
   const hourlyMap = {};
 
   for (const entry of todayBlock.dataMinute) {
-    // parse time theo timezone VN
-    const time = moment.tz(entry.time, 'Asia/Ho_Chi_Minh').toDate();
-    // lấy chuỗi yyyy-mm-ddThh làm key giờ
-    const hourKey = moment(time).format('YYYY-MM-DDTHH'); // ví dụ "2025-06-02T10"
-
-    if (!hourlyMap[hourKey]) {
-      hourlyMap[hourKey] = {
-        sum: 0,
-        count: 0
-      };
+    if (!entry.time || !entry.value) {
+      console.warn('Entry thiếu time hoặc value:', entry);
+      continue;
     }
 
-    hourlyMap[hourKey].sum += parseFloat(entry.value);
+    // Chuyển time sang timezone VN
+    const time = moment.tz(entry.time, 'Asia/Ho_Chi_Minh').toDate();
+    const hourKey = moment(time).format('YYYY-MM-DDTHH');
+
+    if (!hourlyMap[hourKey]) {
+      hourlyMap[hourKey] = { sum: 0, count: 0 };
+    }
+
+    const val = parseFloat(entry.value);
+    if (isNaN(val)) {
+      console.warn('Value không phải số:', entry.value);
+      continue;
+    }
+
+    hourlyMap[hourKey].sum += val;
     hourlyMap[hourKey].count += 1;
   }
 
@@ -41,19 +56,19 @@ function calculateHourlyAverage(todayBlock) {
     const { sum, count } = hourlyMap[hour];
     const avg = sum / count;
 
-    // tạo thời gian đúng đầu giờ theo VN timezone và convert về ISO string chuẩn UTC
-    const timeVN = moment.tz(hour, 'YYYY-MM-DDTHH', 'Asia/Ho_Chi_Minh')
-      .startOf('hour')
-      .toDate();
+    const timeVN = moment.tz(hour, 'YYYY-MM-DDTHH', 'Asia/Ho_Chi_Minh').startOf('hour').toDate();
 
     hourlyAverages.push({
       time: timeVN,
-      value: avg.toFixed(2)
+      value: parseFloat(avg.toFixed(2))
     });
   }
 
+  console.log('hourlyAverages:', hourlyAverages);
+
   return hourlyAverages;
 }
+
 
 client.on('connect', () => {
   console.log('MQTT Connected');
@@ -97,33 +112,35 @@ client.on('message', async (topic, message) => {
   if (topic.endsWith('/sensors/response')) {
     const parts = topic.split('/');
     console.log(parts);
+
     if (parts.length === 5) {
       const [gatewayName, nodeAddh, nodeAddl] = parts;
 
       try {
         const sensorList = JSON.parse(message.toString());
 
-        // Tìm gateway và node trong DB
         const gateway = await Gateways.findOne({ gatewayName: gatewayName });
-        const nodes = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl });
+        const node = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl });
 
         if (!gateway) {
           console.warn('⚠️ Gateway không tồn tại!');
           return;
         }
-        if (!nodes) {
+
+        if (!node) {
           console.warn('⚠️ Node không tồn tại!');
           return;
         }
+
         for (const sensorData of sensorList) {
           const pin = sensorData.Pin;
           const value = sensorData.Value;
-          const timeNow = moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD HH:mm:ss');
-          console.log(timeNow);
+          const timeNow = new Date();
+
           const sensor = await Sensors.findOne({
             sensorType: pin,
             gatewayId: gateway._id,
-            nodeId: nodes._id
+            nodeId: node._id
           });
 
           if (!sensor) {
@@ -131,30 +148,42 @@ client.on('message', async (topic, message) => {
             continue;
           }
 
-          if (!sensor.data || sensor.data.length === 0) {
-            sensor.data = [{
-              today: [{
-                dataMinute: [],
-                dataHour: []
-              }],
-              pastDay: []
-            }];
+          if (!sensor.data || typeof sensor.data !== 'object') {
+            sensor.data = {};
           }
 
-          const todayBlock = sensor.data[0].today[0];
-          if (!todayBlock) {
-            console.warn(`⚠️ Sensor PIN ${pin} không có today block`);
-            continue;
+          if (!sensor.data.today || typeof sensor.data.today !== 'object') {
+            sensor.data.today = {};
           }
 
-          todayBlock.dataMinute.push({
-            time: timeNow,
-            value: value.toString()
+          if (!Array.isArray(sensor.data.today.dataMinute)) {
+            if (typeof sensor.data.today.dataMinute === 'string') {
+              try {
+                sensor.data.today.dataMinute = JSON.parse(sensor.data.today.dataMinute);
+                if (!Array.isArray(sensor.data.today.dataMinute)) {
+                  sensor.data.today.dataMinute = [];
+                }
+              } catch {
+                sensor.data.today.dataMinute = [];
+              }
+            } else {
+              sensor.data.today.dataMinute = [];
+            }
+          }
+
+          if (!Array.isArray(sensor.data.today.dataHour)) {
+            sensor.data.today.dataHour = [];
+          }
+
+          sensor.data.today.dataMinute.push({
+            time: new Date(),
+            value: Number(value)
           });
 
-          todayBlock.dataHour = calculateHourlyAverage(todayBlock);
+          sensor.data.today.dataHour = calculateHourlyAverage(sensor.data.today);
 
           await sensor.save();
+
           console.log(`✅ Lưu dataMinute cho sensor PIN ${pin}: ${value}`);
         }
       } catch (err) {

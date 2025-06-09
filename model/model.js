@@ -110,11 +110,11 @@ const sensorSchema = new mongoose.Schema({
             today: {
                 dataMinute: [{
                     time: { type: Date },   
-                    value: { type: String }
+                    value: { type: Number }
                 }],
                 dataHour: [{
                     time: { type: Date },
-                    value: { type: String }
+                    value: { type: Number }
                 }]
             },
 
@@ -122,17 +122,28 @@ const sensorSchema = new mongoose.Schema({
                 date: { type: Date },       
                 dataMinute: [{
                     time: { type: Date },
-                    value: { type: String }
+                    value: { type: Number }
                 }],
                 dataHour: [{
                     time: { type: Date },
-                    value: { type: String }
+                    value: { type: Number }
                 }]
             }]
         }
 });
 
-
+const conditionsSchema = new mongoose.Schema({
+    id: {type: String},
+    gatewayId: {type: mongoose.Schema.Types.ObjectId,ref: "Gateways"},
+    nodeId: {type: mongoose.Schema.Types.ObjectId,ref: "Node"},
+    deviceName:{type: String},
+    devicePin:{type: String},
+    description:{type: String},
+    status:{type: Boolean},
+    sensorType:{type: String},
+    minValue:{type: String},
+    maxValue:{type: String}
+});
 
 //Copy id tu truong _id
 usersSchema.pre('save', function (next) {
@@ -191,6 +202,7 @@ let newGateway = mongoose.model("newGateway", newGatewaySchema);
 let Sensors = mongoose.model("Sensors", sensorSchema);
 let Devices = mongoose.model("Devices", deviceSchema);
 let Schedules = mongoose.model("Schedules", schedulesSchema);
+
 
 module.exports = { Users, Gateways, Node, newGateway, Sensors, Devices, Schedules }; 
 
