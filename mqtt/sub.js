@@ -1,21 +1,21 @@
 // mqtt/client.js
-const { Sensors, Gateways, Node, newGateway, Schedules } = require("../model/model");
+const { Sensors, Gateways, Node, newGateway, Schedules, Devices } = require("../model/model");
 const mongoose = require("mongoose");
 const cron = require('node-cron');
 const moment = require('moment-timezone');
 
 const mqtt = require('mqtt');
-const options = {
-  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-  port: 8883, // Port cho MQTT over TLS (bảo mật)
-  protocol: 'mqtts',
-  username: 'VanTu1208',
-  password: 'Thuhoai17'
-};
+// const options = {
+//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+//   port: 8883, // Port cho MQTT over TLS (bảo mật)
+//   protocol: 'mqtts',
+//   username: 'VanTu1208',
+//   password: 'Thuhoai17'
+// };
 
-const client = mqtt.connect(options);
+// const client = mqtt.connect(options);
 
-// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 //Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
@@ -149,6 +149,11 @@ client.on('connect', () => {
       console.log('Subscribed to sensor response topics!');
     }
   });
+  client.subscribe('+\/controls\/+\/+\/+/response', (err) => {
+    if (!err) {
+      console.log('✅ Subscribed to control response topics');
+    }
+  });
 });
 
 client.on('message', async (topic, message) => {
@@ -257,6 +262,60 @@ client.on('message', async (topic, message) => {
 
     } else {
       console.warn('❗Topic không đúng định dạng:', topic);
+    }
+  };
+  if (topic.includes('/controls/') && topic.endsWith('/response')) {
+    const parts = topic.split('/');
+    const payload = message.toString();
+
+    if (parts.length === 6) {
+      const [gatewayName, , nodeAddh, nodeAddl, id] = parts;
+
+      if (payload === '1' || payload === '0') {
+        const statusBool = payload === '1';
+
+        console.log(`✅ Nhận phản hồi từ thiết bị:`);
+        console.log(`→ Gateway: ${gatewayName}`);
+        console.log(`→ Node: ${nodeAddh}-${nodeAddl}`);
+        console.log(`→ ID: ${id}`);
+        console.log(`→ Trạng thái thực hiện: ${statusBool ? 'BẬT' : 'TẮT'}`);
+
+        try {
+          // Tìm gateway và node
+          const gateway = await Gateways.findOne({ gatewayName });
+          const node = await Node.findOne({ nodeAddh, nodeAddl });
+
+          if (!gateway || !node) {
+            console.warn('⚠️ Không tìm thấy Gateway hoặc Node!');
+            return;
+          }
+
+          // Tìm thiết bị theo gatewayId, nodeId, devicePin
+          const device = await Devices.findOne({
+            gatewayId: gateway._id,
+            nodeId: node._id,
+            pin: id.toString(),
+          });
+
+          if (!device) {
+            console.warn(`⚠️ Không tìm thấy thiết bị với pin ${id}`);
+            return;
+          }
+
+          // Cập nhật status
+          device.status = statusBool;
+          await device.save();
+
+          console.log(`✅ Đã cập nhật trạng thái thiết bị ${device.deviceName} (${id}) → ${statusBool ? 'BẬT' : 'TẮT'}`);
+        } catch (err) {
+          console.error('❌ Lỗi khi cập nhật trạng thái thiết bị:', err);
+        }
+
+      } else {
+        console.warn(`⚠️ Message phản hồi không hợp lệ: ${payload}`);
+      }
+    } else {
+      console.warn(`⚠️ Topic không đúng định dạng: ${topic}`);
     }
   }
 });

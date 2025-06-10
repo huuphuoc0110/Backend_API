@@ -79,7 +79,7 @@ const schedulesSchema = new mongoose.Schema({
     {
         type: String,
     },
-    devicePin:
+    pin:
     {
         type: String,
     },
