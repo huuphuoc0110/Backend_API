@@ -76,6 +76,8 @@ async function publishAllSchedules() {
       .populate('nodeId');
 
     const nowVN = moment().tz('Asia/Ho_Chi_Minh');
+    const nowHour = nowVN.hour();
+    const nowMinute = nowVN.minute();
 
     for (const schedule of schedules) {
       if (!schedule.gatewayId || !schedule.nodeId) {
@@ -83,34 +85,14 @@ async function publishAllSchedules() {
         continue;
       }
 
-      let startVN, endVN;
+      const startHour = moment(schedule.startTime).utc().hour();
+      const startMinute = moment(schedule.startTime).utc().minute();
 
-      if (schedule.dailyRepeat) {
-        // Chỉ lấy giờ - phút của startTime và endTime, áp vào hôm nay
-        const startHour = moment(schedule.startTime).utc().hour();
-        const startMinute = moment(schedule.startTime).utc().minute();
-        const endHour = moment(schedule.endTime).utc().hour();
-        const endMinute = moment(schedule.endTime).utc().minute();
+      const isMatchTime = nowHour === startHour && nowMinute === startMinute;
 
-        // Tạo mốc giờ VN hôm nay + giờ UTC
-        startVN = nowVN.clone().hour(startHour).minute(startMinute).second(0);
-        endVN = nowVN.clone().hour(endHour).minute(endMinute).second(0);
+      if (!isMatchTime) continue;
 
-        // Nếu endTime < startTime → tự động cộng 1 ngày cho endTime
-        if (endVN.isBefore(startVN)) {
-          endVN.add(1, 'day');
-        }
-
-      } else {
-        // Với lịch không lặp lại, giữ nguyên UTC → chuyển sang giờ VN để so sánh
-        startVN = moment(schedule.startTime).tz('Asia/Ho_Chi_Minh');
-        endVN = moment(schedule.endTime).tz('Asia/Ho_Chi_Minh');
-      }
-
-      const isWithinRange = nowVN.isBetween(startVN, endVN, null, '[)');
-
-      const status = isWithinRange ? "1" : "0";
-
+      const status = schedule.status;
       const gatewayName = schedule.gatewayId.gatewayName;
       const nodeAddh = schedule.nodeId.nodeAddh;
       const nodeAddl = schedule.nodeId.nodeAddl;
@@ -119,12 +101,21 @@ async function publishAllSchedules() {
 
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${id}/command`;
 
-      client.publish(topic, status, (err) => {
+      client.publish(topic, status, async (err) => {
         if (err) {
           console.error(`❌ Lỗi publish tới ${topic}:`, err);
         } else {
-          const actionText = status === "1" ? "BẬT" : "TẮT";
-          console.log(`🕒 [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Thiết bị "${deviceName}" (${topic}) sẽ được ${actionText}`);
+          console.log(`🕒 [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Thiết bị "${deviceName}" (${topic}) sẽ được BẬT`);
+
+          // Nếu lịch không lặp lại, thì xóa sau khi publish thành công
+          if (!schedule.dailyRepeat) {
+            try {
+              await Schedules.findByIdAndDelete(schedule._id);
+              console.log(`🗑️ Đã xoá schedule ${schedule._id} vì không lặp lại`);
+            } catch (deleteErr) {
+              console.error(`❌ Lỗi xoá schedule ${schedule._id}:`, deleteErr);
+            }
+          }
         }
       });
     }
@@ -132,6 +123,8 @@ async function publishAllSchedules() {
     console.error('❌ Lỗi khi publish all schedules:', err);
   }
 }
+
+
 
 
 client.on('connect', () => {

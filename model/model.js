@@ -95,10 +95,6 @@ const schedulesSchema = new mongoose.Schema({
     {
         type: Date
     },
-    endTime:
-    {
-        type: Date
-    },
 });
 const sensorSchema = new mongoose.Schema({
     id:{type: String},
