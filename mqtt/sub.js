@@ -99,13 +99,15 @@ async function publishAllSchedules() {
       const id = schedule.devicePin;
       const deviceName = schedule.deviceName;
 
+      const actionText = status === "1" ? "BẬT" : "TẮT";
+
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${id}/command`;
 
       client.publish(topic, status, async (err) => {
         if (err) {
           console.error(`❌ Lỗi publish tới ${topic}:`, err);
         } else {
-          console.log(`🕒 [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Thiết bị "${deviceName}" (${topic}) sẽ được BẬT`);
+          console.log(`🕒 [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Thiết bị "${deviceName}" (${topic}) sẽ được (${actionText})`);
 
           // Nếu lịch không lặp lại, thì xóa sau khi publish thành công
           if (!schedule.dailyRepeat) {
