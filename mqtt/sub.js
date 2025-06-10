@@ -1,5 +1,5 @@
 // mqtt/client.js
-const { Sensors, Gateways, Node, newGateway } = require("../model/model");
+const { Sensors, Gateways, Node, newGateway, Schedules } = require("../model/model");
 const mongoose = require("mongoose");
 const cron = require('node-cron');
 const moment = require('moment-timezone');
@@ -17,7 +17,7 @@ const client = mqtt.connect(options);
 
 // const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
-
+//Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
   if (!todayBlock || !Array.isArray(todayBlock.dataMinute) || todayBlock.dataMinute.length === 0) {
     console.log('dataMinute is empty or invalid');
@@ -69,10 +69,74 @@ function calculateHourlyAverage(todayBlock) {
   return hourlyAverages;
 }
 
+async function publishAllSchedules() {
+  try {
+    const schedules = await Schedules.find()
+      .populate('gatewayId')
+      .populate('nodeId');
+
+    const nowVN = moment().tz('Asia/Ho_Chi_Minh');
+
+    for (const schedule of schedules) {
+      if (!schedule.gatewayId || !schedule.nodeId) {
+        console.warn(`⚠️ Thiếu gatewayId hoặc nodeId ở schedule ${schedule._id}`);
+        continue;
+      }
+
+      let startVN, endVN;
+
+      if (schedule.dailyRepeat) {
+        // Chỉ lấy giờ - phút của startTime và endTime, áp vào hôm nay
+        const startHour = moment(schedule.startTime).utc().hour();
+        const startMinute = moment(schedule.startTime).utc().minute();
+        const endHour = moment(schedule.endTime).utc().hour();
+        const endMinute = moment(schedule.endTime).utc().minute();
+
+        // Tạo mốc giờ VN hôm nay + giờ UTC
+        startVN = nowVN.clone().hour(startHour).minute(startMinute).second(0);
+        endVN = nowVN.clone().hour(endHour).minute(endMinute).second(0);
+
+        // Nếu endTime < startTime → tự động cộng 1 ngày cho endTime
+        if (endVN.isBefore(startVN)) {
+          endVN.add(1, 'day');
+        }
+
+      } else {
+        // Với lịch không lặp lại, giữ nguyên UTC → chuyển sang giờ VN để so sánh
+        startVN = moment(schedule.startTime).tz('Asia/Ho_Chi_Minh');
+        endVN = moment(schedule.endTime).tz('Asia/Ho_Chi_Minh');
+      }
+
+      const isWithinRange = nowVN.isBetween(startVN, endVN, null, '[)');
+
+      const status = isWithinRange ? "1" : "0";
+
+      const gatewayName = schedule.gatewayId.gatewayName;
+      const nodeAddh = schedule.nodeId.nodeAddh;
+      const nodeAddl = schedule.nodeId.nodeAddl;
+      const id = schedule.devicePin;
+      const deviceName = schedule.deviceName;
+
+      const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${id}/command`;
+
+      client.publish(topic, status, (err) => {
+        if (err) {
+          console.error(`❌ Lỗi publish tới ${topic}:`, err);
+        } else {
+          const actionText = status === "1" ? "BẬT" : "TẮT";
+          console.log(`🕒 [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Thiết bị "${deviceName}" (${topic}) sẽ được ${actionText}`);
+        }
+      });
+    }
+  } catch (err) {
+    console.error('❌ Lỗi khi publish all schedules:', err);
+  }
+}
 
 
 client.on('connect', () => {
   console.log('MQTT Connected');
+  publishAllSchedules();
   client.subscribe('newGateway/response', (err) => {
     if (err) {
       console.error('Subscribe error:', err);

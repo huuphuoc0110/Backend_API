@@ -14,6 +14,7 @@ const newGatewayRoute = require("./routes/newGateway");
 const sensorsRoute = require("./routes/sensors");
 const devicesRoute = require("./routes/devices");
 const schedulesRoute = require("./routes/schedules");
+const conditionsRoute = require("./routes/conditions");
 const { moveTodayToPastDay }  = require('./mqtt/sub');
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use("/v1/newGateway", newGatewayRoute);
 app.use("/v1/sensors", sensorsRoute);
 app.use("/v1/devices", devicesRoute);
 app.use("/v1/schedules", schedulesRoute);
+app.use("/v1/conditions", conditionsRoute);
 
 app.listen(8000, () => {
     console.log("Server is running");
