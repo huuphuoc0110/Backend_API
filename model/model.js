@@ -93,7 +93,7 @@ const schedulesSchema = new mongoose.Schema({
     },
     startTime:
     {
-        type: Date
+        type: String
     },
 });
 const sensorSchema = new mongoose.Schema({

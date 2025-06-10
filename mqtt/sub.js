@@ -85,8 +85,8 @@ async function publishAllSchedules() {
         continue;
       }
 
-      const startHour = moment(schedule.startTime).utc().hour();
-      const startMinute = moment(schedule.startTime).utc().minute();
+      // Parse startTime từ string "HH:mm"
+      const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
 
       const isMatchTime = nowHour === startHour && nowMinute === startMinute;
 
@@ -109,7 +109,6 @@ async function publishAllSchedules() {
         } else {
           console.log(`🕒 [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Thiết bị "${deviceName}" (${topic}) sẽ được (${actionText})`);
 
-          // Nếu lịch không lặp lại, thì xóa sau khi publish thành công
           if (!schedule.dailyRepeat) {
             try {
               await Schedules.findByIdAndDelete(schedule._id);
@@ -125,9 +124,6 @@ async function publishAllSchedules() {
     console.error('❌ Lỗi khi publish all schedules:', err);
   }
 }
-
-
-
 
 client.on('connect', () => {
   console.log('MQTT Connected');
