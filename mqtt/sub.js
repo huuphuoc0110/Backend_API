@@ -5,17 +5,17 @@ const cron = require('node-cron');
 const moment = require('moment-timezone');
 
 const mqtt = require('mqtt');
-const options = {
-  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-  port: 8883, // Port cho MQTT over TLS (bảo mật)
-  protocol: 'mqtts',
-  username: 'VanTu1208',
-  password: 'Thuhoai17'
-};
+// const options = {
+//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+//   port: 8883, // Port cho MQTT over TLS (bảo mật)
+//   protocol: 'mqtts',
+//   username: 'VanTu1208',
+//   password: 'Thuhoai17'
+// };
 
-const client = mqtt.connect(options);
+// const client = mqtt.connect(options);
 
-// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 //Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
@@ -75,9 +75,13 @@ async function publishAllSchedules() {
       .populate('gatewayId')
       .populate('nodeId');
 
+    // Lấy thời gian hiện tại theo múi giờ Việt Nam
     const nowVN = moment().tz('Asia/Ho_Chi_Minh');
     const nowHour = nowVN.hour();
     const nowMinute = nowVN.minute();
+
+    // console.log(`⏰ Thời gian hiện tại (VN): ${nowVN.format('YYYY-MM-DD HH:mm:ss')}`);
+    // console.log(`➡️ Giờ hiện tại: ${nowHour}, Phút hiện tại: ${nowMinute}`);
 
     for (const schedule of schedules) {
       if (!schedule.gatewayId || !schedule.nodeId) {
@@ -87,10 +91,14 @@ async function publishAllSchedules() {
 
       // Parse startTime từ string "HH:mm"
       const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
+      // console.log(`📅 Schedule "${schedule.deviceName}" startTime: ${schedule.startTime} → Giờ: ${startHour}, Phút: ${startMinute}`);
 
       const isMatchTime = nowHour === startHour && nowMinute === startMinute;
 
-      if (!isMatchTime) continue;
+      if (!isMatchTime) {
+        // console.log(`⏩ Bỏ qua schedule ${schedule._id} - Không trùng giờ`);
+        continue;
+      }
 
       const status = schedule.status;
       const gatewayName = schedule.gatewayId.gatewayName;
@@ -99,15 +107,17 @@ async function publishAllSchedules() {
       const id = schedule.devicePin;
       const deviceName = schedule.deviceName;
 
-      const actionText = status === "1" ? "BẬT" : "TẮT";
-
+      const actionText = status === true ? "BẬT" : "TẮT";
+      const actionNumber = status === true ? "1" : "0";
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${id}/command`;
 
-      client.publish(topic, status, async (err) => {
+      console.log(`📡 Gửi lệnh "${actionText}" tới thiết bị "${deviceName}" qua topic: ${topic}`);
+
+      client.publish(topic, String(actionNumber), async (err) => {
         if (err) {
           console.error(`❌ Lỗi publish tới ${topic}:`, err);
         } else {
-          console.log(`🕒 [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Thiết bị "${deviceName}" (${topic}) sẽ được (${actionText})`);
+          console.log(`✅ [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Đã publish: "${actionText}" đến "${deviceName}" (${topic})`);
 
           if (!schedule.dailyRepeat) {
             try {
@@ -125,9 +135,15 @@ async function publishAllSchedules() {
   }
 }
 
+
 client.on('connect', () => {
   console.log('MQTT Connected');
   publishAllSchedules();
+  // Gọi lại mỗi phút
+  cron.schedule('0 * * * * *', () => {
+    console.log('⏱️ Cron chạy lúc:', moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD HH:mm:ss'));
+    publishAllSchedules();
+  });
   client.subscribe('newGateway/response', (err) => {
     if (err) {
       console.error('Subscribe error:', err);
@@ -355,4 +371,6 @@ cron.schedule('00 00 * * *', async () => {
   timezone: "Asia/Ho_Chi_Minh"
 });
 
-module.exports = { moveTodayToPastDay };
+
+
+module.exports = { moveTodayToPastDay, publishAllSchedules };
