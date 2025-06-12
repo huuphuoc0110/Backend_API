@@ -333,25 +333,35 @@ const moveTodayToPastDay = async () => {
   const sensors = await Sensors.find();
 
   for (const sensor of sensors) {
-    if (!sensor.data || sensor.data.length === 0) continue;
+    if (!sensor.data) continue;
 
-    const todayBlock = sensor.data[0].today[0];
-    if (!todayBlock) continue;
+    const todayData = sensor.data.today;
+    if (!todayData) continue;
+
+    const { dataMinute, dataHour } = todayData;
 
     if (
-      (!todayBlock.dataMinute || todayBlock.dataMinute.length === 0) &&
-      (!todayBlock.dataHour || todayBlock.dataHour.length === 0)
+      (!dataMinute || dataMinute.length === 0) &&
+      (!dataHour || dataHour.length === 0)
     ) {
       continue;
     }
 
-    sensor.data[0].pastDay.push({
-      date: moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD'),
-      dataMinute: todayBlock.dataMinute || [],
-      dataHour: todayBlock.dataHour || []
-    });
+    const newPastDayEntry = {
+      date: moment().tz('Asia/Ho_Chi_Minh').startOf('day').toDate(),
+      dataMinute: dataMinute || [],
+      dataHour: dataHour || []
+    };
 
-    sensor.data[0].today[0] = {
+    // Đảm bảo mảng pastDay đã khởi tạo
+    if (!sensor.data.pastDay) {
+      sensor.data.pastDay = [];
+    }
+
+    sensor.data.pastDay.push(newPastDayEntry);
+
+    // Reset today
+    sensor.data.today = {
       dataMinute: [],
       dataHour: []
     };
@@ -360,6 +370,7 @@ const moveTodayToPastDay = async () => {
     console.log(`✅ Đã chuyển today → pastDay cho sensor ${sensor._id}`);
   }
 };
+
 
 cron.schedule('00 00 * * *', async () => {
   try {
@@ -371,6 +382,8 @@ cron.schedule('00 00 * * *', async () => {
   timezone: "Asia/Ho_Chi_Minh"
 });
 
-
+// (async () => {
+//   await moveTodayToPastDay();
+// })();
 
 module.exports = { moveTodayToPastDay, publishAllSchedules };
