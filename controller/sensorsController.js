@@ -5,7 +5,7 @@ const { Sensors, Gateways, Node } = require("../model/model");
 const moment = require('moment-timezone');
 
 function convertToVN(date) {
-    return moment(date).tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD HH:mm:ss");
+    return moment(date).tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DDTHH:mm:ss.SSSZ");
 }
 
 function formatSensorTime(sensor) {

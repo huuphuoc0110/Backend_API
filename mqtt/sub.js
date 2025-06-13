@@ -348,7 +348,10 @@ const moveTodayToPastDay = async () => {
     }
 
     const newPastDayEntry = {
-      date: moment().tz('Asia/Ho_Chi_Minh').startOf('day').toDate(),
+      date: moment.tz('Asia/Ho_Chi_Minh')
+        .subtract(1, 'day')
+        .startOf('day')
+        .toDate(), // sẽ trả về 2025-06-11T17:00:00.000Z nếu là đầu ngày 13/06 VN
       dataMinute: dataMinute || [],
       dataHour: dataHour || []
     };
