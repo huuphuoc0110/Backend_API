@@ -1,5 +1,5 @@
 // mqtt/client.js
-const { Sensors, Gateways, Node, newGateway, Schedules, Devices } = require("../model/model");
+const { Sensors, Gateways, Node, newGateway, Schedules, Devices, Conditions } = require("../model/model");
 const mongoose = require("mongoose");
 const cron = require('node-cron');
 const moment = require('moment-timezone');
@@ -135,15 +135,115 @@ async function publishAllSchedules() {
   }
 }
 
+async function publishAllConditions() {
+  try {
+    const conditions = await Conditions.find()
+      .populate('gatewayId')
+      .populate('nodeId');
+    for (const condition of conditions) {
+      if (!condition.gatewayId || !condition.nodeId) {
+        console.warn(`⚠️ Thiếu gatewayId hoặc nodeId ở condtion ${condition._id}`);
+        continue;
+      }
+
+      const deviceName = condition.deviceName;
+      const devicePin = condition.devicePin;
+      const status = condition.status;
+      const sensorType = condition.sensorType;
+      const minValue = condition.minValue;
+      const maxValue = condition.maxValue;
+
+      const gatewayName = condition.gatewayId?.gatewayName;    // hoặc condition.gatewayId.gatewayName
+      const nodeAddh = condition.nodeId?.addH;
+      const nodeAddl = condition.nodeId?.addL;
+
+      const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${devicePin}/command`;
+
+      //Lưu trạng thái ban đầu của Devices
+      const device = await Devices.findOne({
+        gatewayId: condition.gatewayId._id,
+        nodeId: condition.nodeId._id,
+        pin: String(devicePin),
+      });
+      if (!device) {
+        console.warn(`⚠️ Không tìm thấy thiết bị tại condition ${condition._id}`);
+        continue;
+      }
+      if (device.defaultStatus === undefined) {
+        device.defaultStatus = device.status;
+        await device.save(); // lưu lại để dùng về sau
+      }
+
+      //Lấy giá trị sensor để so sánh 
+      const sensor = await Sensors.findOne({
+        gatewayId: condition.gatewayId._id,
+        nodeId: condition.nodeId._id,
+        sensorType: sensorType, // Đảm bảo schema Sensors có field này
+      });
+
+      if (!sensor || !sensor.data?.today?.dataMinute?.length) {
+        console.warn(`⚠️ Không tìm thấy sensor hoặc không có dữ liệu tại condition ${id}`);
+        continue;
+      }
+
+      const latestData = sensor.data.today.dataMinute.at(-1); // lấy giá trị mới nhất
+      const value = latestData.value;
+
+      if (typeof value !== 'number') {
+        console.warn(`⚠️ Giá trị sensor không hợp lệ tại condition ${id}`);
+        continue;
+      }
+
+      const initialStatus = device.defaultStatus;
+      const currentStatus = device.status;
+
+      const isWithinRange =
+        minValue !== undefined &&
+        maxValue !== undefined &&
+        value >= minValue &&
+        value <= maxValue;
+
+      let nextStatus;
+
+      if (isWithinRange) {
+        nextStatus = status; // Theo condition.status
+      } else {
+        nextStatus = initialStatus; // Theo trạng thái mặc định
+      }
+
+      if (currentStatus !== nextStatus) {
+        const actionText = nextStatus ? "BẬT" : "TẮT";
+        const actionNumber = nextStatus ? "1" : "0";
+
+        client.publish(topic, String(actionNumber));
+        console.log(`📡 Giá trị = ${value} (${isWithinRange ? "TRONG" : "NGOÀI"} khoảng) → Gửi lệnh ${actionText} tới ${topic}`);
+
+        // Cập nhật lại trạng thái thực tế
+        device.status = nextStatus;
+        await device.save();
+      } else {
+        console.log(`✅ Không cần điều khiển. Thiết bị đã ở trạng thái đúng (${currentStatus})`);
+      }
+
+    }
+  } catch {
+
+  }
+}
 
 client.on('connect', () => {
   console.log('MQTT Connected');
   publishAllSchedules();
+  // publishAllConditions();
   // Gọi lại mỗi phút
   cron.schedule('0 * * * * *', () => {
     console.log('⏱️ Cron chạy lúc:', moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD HH:mm:ss'));
     publishAllSchedules();
   });
+
+  // cron.schedule('* * * * * *', () => {
+  //   publishAllConditions();
+  // });
   client.subscribe('newGateway/response', (err) => {
     if (err) {
       console.error('Subscribe error:', err);
@@ -271,6 +371,7 @@ client.on('message', async (topic, message) => {
       console.warn('❗Topic không đúng định dạng:', topic);
     }
   };
+
   if (topic.includes('/controls/') && topic.endsWith('/response')) {
     const parts = topic.split('/');
     const payload = message.toString();

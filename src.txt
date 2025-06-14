@@ -1,4 +1,5 @@
-controller                  
+controller   
+├─ conditionsController.js                 
 ├─ devicesController.js     
 ├─ gatewaysController.js    
 ├─ newGatewayController.js  
@@ -10,7 +11,8 @@ model
 └─ model.js  
 mqtt       
 └─ sub.js  
-routes            
+routes 
+├─ conditions.js        
 ├─ devices.js     
 ├─ gateways.js    
 ├─ newGateway.js  
