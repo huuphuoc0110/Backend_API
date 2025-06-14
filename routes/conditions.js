@@ -1,18 +1,18 @@
-//Chứa các route API như post, get,..
+//Chứa các route API như post, verifyApiKey, get, verifyApiKey,..
 const conditionsController = require("../controller/conditionsController");
 
 const router = require("express").Router();
 
 
-router.post("/", conditionsController.addConditions);
+router.post("/", verifyApiKey, conditionsController.addConditions);
 
 //Find gateways
-router.get("/", conditionsController.findCondition);
+router.get("/", verifyApiKey, conditionsController.findCondition);
 
 //Replace gateways
-router.patch("/:id", conditionsController.updateConditions);
+router.patch("/:id", verifyApiKey, conditionsController.updateConditions);
 
 //Delete gateways
-router.delete("/:id", conditionsController.deleteConditions);
+router.delete("/:id", verifyApiKey, conditionsController.deleteConditions);
 
 module.exports = router;

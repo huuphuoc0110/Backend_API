@@ -1,19 +1,19 @@
-//Chứa các route API như post, get,..
+
 const schedulesController = require("../controller/schedulesController");
 
 const router = require("express").Router();
 
 
-router.post("/",schedulesController.addSchedules);
+router.post("/", verifyApiKey,schedulesController.addSchedules);
 
 //Find gateways
-router.get("/", schedulesController.findSchedules);
+router.get("/", verifyApiKey, schedulesController.findSchedules);
 
 
 //Replace gateways
-router.patch("/:id", schedulesController.updateSchedules);
+router.patch("/:id", verifyApiKey, schedulesController.updateSchedules);
 
 //Delete gateways
-router.delete("/:id", schedulesController.deleteSchedules);
+router.delete("/:id", verifyApiKey, schedulesController.deleteSchedules);
 
 module.exports = router;

@@ -1,19 +1,19 @@
-//Chứa các route API như post, get,..
+
 const devicesController = require("../controller/devicesController");
 
 const router = require("express").Router();
 
 
-router.post("/", devicesController.addDevice);
+router.post("/", verifyApiKey, devicesController.addDevice);
 
 //Find gateways
-router.get("/", devicesController.findDevice);
+router.get("/", verifyApiKey, devicesController.findDevice);
 
 
 //Replace gateways
-router.patch("/:id", devicesController.updateDevice);
+router.patch("/:id", verifyApiKey, devicesController.updateDevice);
 
 //Delete gateways
-router.delete("/:id", devicesController.deleteDevice);
+router.delete("/:id", verifyApiKey, devicesController.deleteDevice);
 
 module.exports = router;

@@ -1,18 +1,18 @@
-//Chứa các route API như post, get,..
+
 const usersController = require("../controller/usersController");
 
 const router = require("express").Router();
 
 //Add user
-router.post("/", usersController.addUsers);
+router.post("/", verifyApiKey, usersController.addUsers);
 
 //Find user
-router.get("/", usersController.getAllUsers);
+router.get("/", verifyApiKey, usersController.getAllUsers);
 
 //Find an users
-router.get("/:id", usersController.findAnUsers);
+router.get("/:id", verifyApiKey, usersController.findAnUsers);
 
-router.patch("/:id", usersController.updateUsers);
+router.patch("/:id", verifyApiKey, usersController.updateUsers);
 
 
 module.exports = router;
