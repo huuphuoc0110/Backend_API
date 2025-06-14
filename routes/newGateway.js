@@ -1,6 +1,6 @@
 
 const newGatewayController = require("../controller/newGatewayController");
-
+const verifyApiKey = require('../middleware/verifyApiKey'); // KHÔNG sai đường dẫn
 const router = require("express").Router();
 
 //Find gateways

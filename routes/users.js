@@ -1,6 +1,6 @@
 
 const usersController = require("../controller/usersController");
-
+const verifyApiKey = require('../middleware/verifyApiKey'); // KHÔNG sai đường dẫn
 const router = require("express").Router();
 
 //Add user

@@ -1,7 +1,7 @@
 
 const sensorsController = require("../controller/sensorsController.js");
-const usersController = require("../controller/sensorsController.js");
 
+const verifyApiKey = require('../middleware/verifyApiKey'); // KHÔNG sai đường dẫn
 const router = require("express").Router();
 
 router.post("/", verifyApiKey, sensorsController.addSensor);

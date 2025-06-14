@@ -1,6 +1,6 @@
 
 const schedulesController = require("../controller/schedulesController");
-
+const verifyApiKey = require('../middleware/verifyApiKey'); // KHÔNG sai đường dẫn
 const router = require("express").Router();
 
 

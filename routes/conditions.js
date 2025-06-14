@@ -1,6 +1,6 @@
 //Chứa các route API như post, verifyApiKey, get, verifyApiKey,..
 const conditionsController = require("../controller/conditionsController");
-
+const verifyApiKey = require('../middleware/verifyApiKey'); // KHÔNG sai đường dẫn
 const router = require("express").Router();
 
 

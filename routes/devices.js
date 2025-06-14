@@ -1,6 +1,6 @@
 
 const devicesController = require("../controller/devicesController");
-
+const verifyApiKey = require('../middleware/verifyApiKey'); // KHÔNG sai đường dẫn
 const router = require("express").Router();
 
 
