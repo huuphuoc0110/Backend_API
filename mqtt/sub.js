@@ -5,17 +5,17 @@ const cron = require('node-cron');
 const moment = require('moment-timezone');
 
 const mqtt = require('mqtt');
-// const options = {
-//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-//   port: 8883, // Port cho MQTT over TLS (bảo mật)
-//   protocol: 'mqtts',
-//   username: 'VanTu1208',
-//   password: 'Thuhoai17'
-// };
+const options = {
+  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+  port: 8883, // Port cho MQTT over TLS (bảo mật)
+  protocol: 'mqtts',
+  username: 'VanTu1208',
+  password: 'Thuhoai17'
+};
 
-// const client = mqtt.connect(options);
+const client = mqtt.connect(options);
 
-const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 //Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
