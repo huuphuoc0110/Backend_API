@@ -60,43 +60,21 @@ const deviceSchema = new mongoose.Schema({
     pin:{type: String},
     description:{type: String},
     status:{type: Boolean},
-    defaultStatus: { type: Boolean }
+    defaultStatus: { type: Boolean, default: undefined }
 });
 
 const schedulesSchema = new mongoose.Schema({
-    id:
-    {
-        type: String
-    },
-    gatewayId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Gateways"
-    },
-    nodeId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Node"
-    },
-    deviceName:
-    {
-        type: String,
-    },
-    devicePin:
-    {
-        type: String,
-    },
-    dailyRepeat:
-    {
-        type: Boolean,
-    },
-    status:
-    {
-        type: Boolean,
-    },
-    startTime:
-    {
-        type: String
-    },
+    id:{type: String},
+    gatewayId: {type: mongoose.Schema.Types.ObjectId,ref: "Gateways"},
+    nodeId: {type: mongoose.Schema.Types.ObjectId,ref: "Node"},
+    deviceName:{type: String},
+    devicePin:{type: String},
+    dailyRepeat:{type: Boolean},
+    status:{type: Boolean},
+    startTime:{type: String},
 });
+
+
 const sensorSchema = new mongoose.Schema({
     id:{type: String},
     gatewayId: {type: mongoose.Schema.Types.ObjectId,ref: "Gateways"},

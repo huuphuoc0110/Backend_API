@@ -5,17 +5,17 @@ const cron = require('node-cron');
 const moment = require('moment-timezone');
 
 const mqtt = require('mqtt');
-const options = {
-  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-  port: 8883, // Port cho MQTT over TLS (bảo mật)
-  protocol: 'mqtts',
-  username: 'VanTu1208',
-  password: 'Thuhoai17'
-};
+// const options = {
+//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+//   port: 8883, // Port cho MQTT over TLS (bảo mật)
+//   protocol: 'mqtts',
+//   username: 'VanTu1208',
+//   password: 'Thuhoai17'
+// };
 
-const client = mqtt.connect(options);
+// const client = mqtt.connect(options);
 
-// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 //Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
@@ -154,8 +154,8 @@ async function publishAllConditions() {
       const maxValue = condition.maxValue;
 
       const gatewayName = condition.gatewayId?.gatewayName;    // hoặc condition.gatewayId.gatewayName
-      const nodeAddh = condition.nodeId?.addH;
-      const nodeAddl = condition.nodeId?.addL;
+      const nodeAddh = condition.nodeId?.nodeAddh;
+      const nodeAddl = condition.nodeId?.nodeAddl;
 
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${devicePin}/command`;
 
@@ -168,10 +168,6 @@ async function publishAllConditions() {
       if (!device) {
         console.warn(`⚠️ Không tìm thấy thiết bị tại condition ${condition._id}`);
         continue;
-      }
-      if (device.defaultStatus === undefined) {
-        device.defaultStatus = device.status;
-        await device.save(); // lưu lại để dùng về sau
       }
 
       //Lấy giá trị sensor để so sánh 
@@ -194,9 +190,6 @@ async function publishAllConditions() {
         continue;
       }
 
-      const initialStatus = device.defaultStatus;
-      const currentStatus = device.status;
-
       const isWithinRange =
         minValue !== undefined &&
         maxValue !== undefined &&
@@ -205,45 +198,56 @@ async function publishAllConditions() {
 
       let nextStatus;
 
+      if (device.defaultStatus === undefined) {
+        device.defaultStatus = device.status;
+        await device.save();
+      }
+
       if (isWithinRange) {
         nextStatus = status; // Theo condition.status
       } else {
-        nextStatus = initialStatus; // Theo trạng thái mặc định
+        nextStatus = device.defaultStatus; // Theo trạng thái mặc định
       }
 
-      if (currentStatus !== nextStatus) {
-        const actionText = nextStatus ? "BẬT" : "TẮT";
-        const actionNumber = nextStatus ? "1" : "0";
+      const actionText = nextStatus ? "BẬT" : "TẮT";
+      const actionNumber = nextStatus ? "1" : "0";
 
-        client.publish(topic, String(actionNumber));
-        console.log(`📡 Giá trị = ${value} (${isWithinRange ? "TRONG" : "NGOÀI"} khoảng) → Gửi lệnh ${actionText} tới ${topic}`);
-
-        // Cập nhật lại trạng thái thực tế
-        device.status = nextStatus;
-        await device.save();
-      } else {
-        console.log(`✅ Không cần điều khiển. Thiết bị đã ở trạng thái đúng (${currentStatus})`);
-      }
-
+      client.publish(topic, String(actionNumber));
+      console.log(`📡 Giá trị = ${value} (${isWithinRange ? "TRONG" : "NGOÀI"} khoảng) → Gửi lệnh ${actionText} tới ${topic}`);
     }
-  } catch {
 
+    const allDevices = await Devices.find();
+    let stillHasCondition
+    for (const devices of allDevices) {
+        stillHasCondition = await Conditions.exists({
+        gatewayId: devices.gatewayId,
+        nodeId: devices.nodeId,
+        pin: devices.devicePin,
+      });
+      if (!stillHasCondition && devices.defaultStatus !== undefined) {
+        devices.status = devices.defaultStatusBeforeCondition ?? devices.status;
+        devices.defaultStatus = undefined;
+        await devices.save();
+
+        console.log(`🔁 Đã reset trạng thái thiết bị ${devices.name} vì không còn điều kiện nào`);
+      }
+    }
+  } catch (err) {
+    console.error("❌ Lỗi trong publishAllConditions:", err);
   }
 }
+
+
 
 client.on('connect', () => {
   console.log('MQTT Connected');
   publishAllSchedules();
-  // publishAllConditions();
-  // Gọi lại mỗi phút
+
   cron.schedule('0 * * * * *', () => {
     console.log('⏱️ Cron chạy lúc:', moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD HH:mm:ss'));
     publishAllSchedules();
   });
 
-  // cron.schedule('* * * * * *', () => {
-  //   publishAllConditions();
-  // });
   client.subscribe('newGateway/response', (err) => {
     if (err) {
       console.error('Subscribe error:', err);
@@ -360,9 +364,9 @@ client.on('message', async (topic, message) => {
           sensor.data.today.dataHour = calculateHourlyAverage(sensor.data.today);
 
           await sensor.save();
-
           console.log(`✅ Lưu dataMinute cho sensor PIN ${pin}: ${value}`);
         }
+        publishAllConditions();
       } catch (err) {
         console.error('❌ Lỗi xử lý message hoặc ghi DB:', err);
       }
@@ -475,10 +479,10 @@ const moveTodayToPastDay = async () => {
   }
 };
 
-
-cron.schedule('00 00 * * *', async () => {
+cron.schedule('0 0 * * *', async () => {
   try {
     await moveTodayToPastDay();
+    // console.log("Cron thanh cong");
   } catch (err) {
     console.error('❌ Cron job lỗi:', err);
   }
@@ -486,8 +490,5 @@ cron.schedule('00 00 * * *', async () => {
   timezone: "Asia/Ho_Chi_Minh"
 });
 
-// (async () => {
-//   await moveTodayToPastDay();
-// })();
 
 module.exports = { moveTodayToPastDay, publishAllSchedules };
