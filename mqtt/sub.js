@@ -12,7 +12,7 @@ const options = {
   username: 'VanTu1208',
   password: 'Thuhoai17'
 };
-
+let gotResponseMap
 const client = mqtt.connect(options);
 
 // const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
@@ -110,25 +110,32 @@ async function publishAllSchedules() {
       const actionText = status === true ? "BẬT" : "TẮT";
       const actionNumber = status === true ? "1" : "0";
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${id}/command`;
-
-      console.log(`📡 Gửi lệnh "${actionText}" tới thiết bị "${deviceName}" qua topic: ${topic}`);
-
-      client.publish(topic, String(actionNumber), async (err) => {
-        if (err) {
-          console.error(`❌ Lỗi publish tới ${topic}:`, err);
-        } else {
-          console.log(`✅ [${nowVN.format('YYYY-MM-DD HH:mm:ss')}] Đã publish: "${actionText}" đến "${deviceName}" (${topic})`);
-
-          if (!schedule.dailyRepeat) {
-            try {
-              await Schedules.findByIdAndDelete(schedule._id);
-              console.log(`🗑️ Đã xoá schedule ${schedule._id} vì không lặp lại`);
-            } catch (deleteErr) {
-              console.error(`❌ Lỗi xoá schedule ${schedule._id}:`, deleteErr);
-            }
-          }
+      gotResponseMap = false;
+      for (let i = 1; i <= 3; i++) {
+        if (gotResponseMap) {
+          console.log(`✅ Đã nhận phản hồi từ "${deviceName}", dừng gửi`);
+          break;
         }
-      });
+
+        console.log(`📡 [Lần ${i}] Gửi lệnh "${actionText}" tới "${deviceName}" → ${topic}`);
+        client.publish(topic, String(actionNumber));
+        if (i <= 3) {
+          // 🕒 Chờ 5 giây trước lần gửi tiếp theo
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
+      // Nếu sau 3 lần mà không có phản hồi
+      if (!gotResponseMap) {
+        console.warn(`❌ Không có phản hồi từ "${deviceName}" sau 3 lần gửi`);
+      } else if (!schedule.dailyRepeat) {
+        try {
+          await Schedules.findByIdAndDelete(schedule._id);
+          console.log(`🗑️ Đã xoá schedule ${schedule._id} vì không lặp lại`);
+        } catch (deleteErr) {
+          console.error(`❌ Lỗi xoá schedule ${schedule._id}:`, deleteErr);
+        }
+      }
+
     }
   } catch (err) {
     console.error('❌ Lỗi khi publish all schedules:', err);
@@ -146,7 +153,6 @@ async function publishAllConditions() {
         continue;
       }
 
-      const deviceName = condition.deviceName;
       const devicePin = condition.devicePin;
       const status = condition.status;
       const sensorType = condition.sensorType;
@@ -165,6 +171,7 @@ async function publishAllConditions() {
         nodeId: condition.nodeId._id,
         pin: String(devicePin),
       });
+
       if (!device) {
         console.warn(`⚠️ Không tìm thấy thiết bị tại condition ${condition._id}`);
         continue;
@@ -198,15 +205,30 @@ async function publishAllConditions() {
 
       let nextStatus;
 
-      if (device.defaultStatus === undefined) {
+      if (device.defaultStatus === undefined || device.conditionFlag === undefined) {
         device.defaultStatus = device.status;
+        device.conditionFlag = false;
         await device.save();
       }
 
       if (isWithinRange) {
-        nextStatus = status; // Theo condition.status
+        if (!device.conditionFlag) {
+          nextStatus = status; // Theo condition.status
+          device.conditionFlag = true;
+          await device.save();
+        } else {
+          console.log("TRONG ĐIỀU KIỆN KHÔNG CẦN PUBLISH");
+          break;
+        }
       } else {
-        nextStatus = device.defaultStatus; // Theo trạng thái mặc định
+        if (device.conditionFlag) {
+          nextStatus = device.defaultStatus; // Theo condition.status
+          device.conditionFlag = false;
+          await device.save();
+        } else {
+          console.log("Thiết bị ở trạng thái đặt điều, kh cần publish");
+          break;
+        }
       }
 
       const actionText = nextStatus ? "BẬT" : "TẮT";
@@ -219,7 +241,7 @@ async function publishAllConditions() {
     const allDevices = await Devices.find();
     let stillHasCondition
     for (const devices of allDevices) {
-        stillHasCondition = await Conditions.exists({
+      stillHasCondition = await Conditions.exists({
         gatewayId: devices.gatewayId,
         nodeId: devices.nodeId,
         pin: devices.devicePin,
@@ -227,6 +249,7 @@ async function publishAllConditions() {
       if (!stillHasCondition && devices.defaultStatus !== undefined) {
         devices.status = devices.defaultStatusBeforeCondition ?? devices.status;
         devices.defaultStatus = undefined;
+        devices.conditionFlag = false;
         await devices.save();
 
         console.log(`🔁 Đã reset trạng thái thiết bị ${devices.name} vì không còn điều kiện nào`);
@@ -391,6 +414,8 @@ client.on('message', async (topic, message) => {
         console.log(`→ Node: ${nodeAddh}-${nodeAddl}`);
         console.log(`→ ID: ${id}`);
         console.log(`→ Trạng thái thực hiện: ${statusBool ? 'BẬT' : 'TẮT'}`);
+
+        gotResponseMap = true;
 
         try {
           // Tìm gateway và node

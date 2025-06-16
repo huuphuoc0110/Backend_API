@@ -60,7 +60,8 @@ const deviceSchema = new mongoose.Schema({
     pin:{type: String},
     description:{type: String},
     status:{type: Boolean},
-    defaultStatus: { type: Boolean, default: undefined }
+    defaultStatus: { type: Boolean, default: undefined },
+    conditionFlag:{type: Boolean, default: false}
 });
 
 const schedulesSchema = new mongoose.Schema({
