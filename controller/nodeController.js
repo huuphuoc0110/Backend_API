@@ -6,13 +6,18 @@ const nodeController = {
 
     addNode: async (req, res) => {
         try {
-            const newNode = new Node(req.body);
+            const newNode = new Node({
+                ...req.body,
+                duration: req.body.duration ?? undefined // ép default nếu không gửi
+            });
+            // console.log("🛠 newNode before save:", newNode);
             const saveNode = await newNode.save();
             if (req.body.gatewayId) { //Cap nhat lien ket giua gateway va users thong qua id cua users
                 const node = Gateways.find({ _id: req.body.gatewayId });
                 await node.updateOne({ $push: { nodeId: saveNode._id } });
             }
             res.status(200).json(saveNode);
+            // console.log("✅ saveNode:", saveNode);
         } catch (err) {
             res.status(500).json(err); //HTTP request code
         };
