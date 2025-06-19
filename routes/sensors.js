@@ -13,4 +13,6 @@ router.get("/", verifyApiKey, sensorsController.findSensorByNode);
 
 router.delete("/:id", verifyApiKey, sensorsController.deleteSensor);
 
+router.patch("/:id", verifyApiKey, sensorsController.updateSensors);
+
 module.exports = router;

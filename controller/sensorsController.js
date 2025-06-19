@@ -90,7 +90,14 @@ const sensorsController = {
             res.status(500).json(err); //HTTP request code
         };
     },
-
+    updateSensors: async (req, res) => {
+        try {
+            const sensors = await Sensors.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+            res.status(200).json(sensors);
+        } catch (err) {
+            res.status(500).json(err); //HTTP request code
+        };
+    }
 };
 
 module.exports = sensorsController;
