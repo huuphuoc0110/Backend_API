@@ -127,6 +127,13 @@ const conditionsSchema = new mongoose.Schema({
     maxValue:{type: Number}
 });
 
+const notifySchema = new mongoose.Schema({
+    userId:{type: mongoose.Schema.Types.ObjectId, ref: "Users"},
+    type: {type: Boolean},
+    data: {type: String},
+    id: {type: String}
+});
+
 //Copy id tu truong _id
 usersSchema.pre('save', function (next) {
     if (!this.id) {
@@ -180,7 +187,12 @@ conditionsSchema.pre('save', function (next) {
     }
     next();
 });
-
+notifySchema.pre('save', function (next) {
+    if (!this.id) {
+        this.id = this._id.toString();
+    }
+    next();
+});
 
 let Users = mongoose.model("Users", usersSchema);
 let Gateways = mongoose.model("Gateways", gatewaysSchema);
@@ -190,6 +202,7 @@ let Sensors = mongoose.model("Sensors", sensorSchema);
 let Devices = mongoose.model("Devices", deviceSchema);
 let Schedules = mongoose.model("Schedules", schedulesSchema);
 let Conditions = mongoose.model("Conditions", conditionsSchema);
+let Notify = mongoose.model("Notify", notifySchema);
 
-module.exports = { Users, Gateways, Node, newGateway, Sensors, Devices, Schedules, Conditions}; 
+module.exports = { Users, Gateways, Node, newGateway, Sensors, Devices, Schedules, Conditions, Notify}; 
 

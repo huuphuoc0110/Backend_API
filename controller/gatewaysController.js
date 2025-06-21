@@ -21,12 +21,12 @@ const gatewaysController = {
 
     getAllGateways: async (req, res) => {
         try {
-            const { users } = req.query;
+            const { userId } = req.query;
 
             let gateways = [];
 
-            if ( users ) {
-                gateways = await Gateways.find({ users });
+            if ( userId ) {
+                gateways = await Gateways.find({ userId });
             } else {
                 gateways = await Gateways.find()
             }
