@@ -122,7 +122,7 @@ async function publishAllSchedules() {
         client.publish(topic, String(actionNumber));
         if (i <= 3) {
           // 🕒 Chờ 5 giây trước lần gửi tiếp theo
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          await new Promise(resolve => setTimeout(resolve, 15000));
         }
       }
       // Nếu sau 3 lần mà không có phản hồi
@@ -422,7 +422,7 @@ client.on('message', async (topic, message) => {
         try {
           // Tìm gateway và node
           const gateway = await Gateways.findOne({ gatewayName });
-          const node = await Node.findOne({ nodeAddh, nodeAddl });
+          const node = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl, gatewayId: gateway._id });
 
           if (!gateway || !node) {
             console.warn('⚠️ Không tìm thấy Gateway hoặc Node!');
