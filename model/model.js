@@ -35,7 +35,6 @@ const nodeSchema = new mongoose.Schema({
     nodeAddress: {type: String},
     id: {type: String},
     duration: { type: Number, default: 5 },
-    gatewayName: {type: String}
 });
 
 const newGatewaySchema = new mongoose.Schema({
@@ -64,7 +63,6 @@ const deviceSchema = new mongoose.Schema({
     status:{type: Boolean},
     defaultStatus: { type: Boolean, default: undefined },
     conditionFlag:{type: Boolean, default: false},
-    gatewayName: {type: String}
 });
 
 const schedulesSchema = new mongoose.Schema({
@@ -76,13 +74,11 @@ const schedulesSchema = new mongoose.Schema({
     dailyRepeat:{type: Boolean},
     status:{type: Boolean},
     startTime:{type: String},
-    gatewayName: {type: String}
 });
 
 
 const sensorSchema = new mongoose.Schema({
     id:{type: String},
-    gatewayName: {type: String},
     gatewayId: {type: mongoose.Schema.Types.ObjectId,ref: "Gateways"},
     nodeId: {type: mongoose.Schema.Types.ObjectId,ref: "Node"},
     sensorType: {type: String},
@@ -115,7 +111,6 @@ const sensorSchema = new mongoose.Schema({
 
 const conditionsSchema = new mongoose.Schema({
     id: {type: String},
-    gatewayName: {type: String},
     gatewayId: {type: mongoose.Schema.Types.ObjectId,ref: "Gateways"},
     nodeId: {type: mongoose.Schema.Types.ObjectId,ref: "Node"},
     deviceName:{type: String, require: true},

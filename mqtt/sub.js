@@ -7,16 +7,16 @@ let gotResponseMap
 
 
 const mqtt = require('mqtt');
-const options = {
-  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-  port: 8883, // Port cho MQTT over TLS (bảo mật)
-  protocol: 'mqtts',
-  username: 'VanTu1208',
-  password: 'Thuhoai17'
-};
-const client = mqtt.connect(options);
+// const options = {
+//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+//   port: 8883, // Port cho MQTT over TLS (bảo mật)
+//   protocol: 'mqtts',
+//   username: 'VanTu1208',
+//   password: 'Thuhoai17'
+// };
+// const client = mqtt.connect(options);
 
-// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 //Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
@@ -325,7 +325,8 @@ client.on('message', async (topic, message) => {
         const sensorList = JSON.parse(message.toString());
 
         const gateway = await Gateways.findOne({ gatewayName: gatewayName });
-        const node = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl });
+
+        const node = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl, gatewayId: gateway._id});
 
         if (!gateway) {
           console.warn('⚠️ Gateway không tồn tại!');
