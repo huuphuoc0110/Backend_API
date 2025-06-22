@@ -1,5 +1,5 @@
 // mqtt/client.js
-const { Sensors, Gateways, Node, newGateway, Schedules, Devices, Conditions } = require("../model/model");
+const { Sensors, Gateways, Node, newGateway, Schedules, Devices, Conditions, Notify } = require("../model/model");
 const mongoose = require("mongoose");
 const cron = require('node-cron');
 const moment = require('moment-timezone');
@@ -75,12 +75,10 @@ async function publishAllSchedules() {
     const schedules = await Schedules.find()
       .populate('gatewayId')
       .populate('nodeId');
-
     // Lấy thời gian hiện tại theo múi giờ Việt Nam
     const nowVN = moment().tz('Asia/Ho_Chi_Minh');
     const nowHour = nowVN.hour();
     const nowMinute = nowVN.minute();
-
     // console.log(`⏰ Thời gian hiện tại (VN): ${nowVN.format('YYYY-MM-DD HH:mm:ss')}`);
     // console.log(`➡️ Giờ hiện tại: ${nowHour}, Phút hiện tại: ${nowMinute}`);
 
@@ -107,7 +105,7 @@ async function publishAllSchedules() {
       const nodeAddl = schedule.nodeId.nodeAddl;
       const id = schedule.devicePin;
       const deviceName = schedule.deviceName;
-
+      const userId = schedule.userId
       const actionText = status === true ? "BẬT" : "TẮT";
       const actionNumber = status === true ? "1" : "0";
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${id}/command`;
@@ -127,7 +125,9 @@ async function publishAllSchedules() {
       }
       // Nếu sau 3 lần mà không có phản hồi
       if (!gotResponseMap) {
+        const message = `Thiết bị ${deviceName} (${id}) đã được ${actionNumber ? 'BẬT' : 'TẮT'}`;
         console.warn(`❌ Không có phản hồi từ "${deviceName}" sau 3 lần gửi`);
+        createNotify({userId, type: false, message});
       } else if (!schedule.dailyRepeat) {
         try {
           await Schedules.findByIdAndDelete(schedule._id);
@@ -326,7 +326,7 @@ client.on('message', async (topic, message) => {
 
         const gateway = await Gateways.findOne({ gatewayName: gatewayName });
 
-        const node = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl, gatewayId: gateway._id});
+        const node = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl, gatewayId: gateway._id });
 
         if (!gateway) {
           console.warn('⚠️ Gateway không tồn tại!');
@@ -422,6 +422,7 @@ client.on('message', async (topic, message) => {
         try {
           // Tìm gateway và node
           const gateway = await Gateways.findOne({ gatewayName });
+          const userId = gateway.userId
           const node = await Node.findOne({ nodeAddh: nodeAddh, nodeAddl: nodeAddl, gatewayId: gateway._id });
 
           if (!gateway || !node) {
@@ -444,10 +445,15 @@ client.on('message', async (topic, message) => {
           // Cập nhật status
           device.status = statusBool;
           await device.save();
+          const message = `Thiết bị ${device.name} (${id}) đã được ${statusBool ? 'BẬT' : 'TẮT'}`;
+          console.log(`✅ ${message}`);
 
-          console.log(`✅ Đã cập nhật trạng thái thiết bị ${device.deviceName} (${id}) → ${statusBool ? 'BẬT' : 'TẮT'}`);
+          //_________________________________________________________________________________________//
+          //Thêm thông báo bật tắt thiết bị thành công
+          createNotify({userId, type: true, message});
         } catch (err) {
           console.error('❌ Lỗi khi cập nhật trạng thái thiết bị:', err);
+          createNotify({userId, type: false, message});
         }
 
       } else {
@@ -517,5 +523,18 @@ cron.schedule('0 0 * * *', async () => {
   timezone: "Asia/Ho_Chi_Minh"
 });
 
+async function createNotify({ userId, type, message }) {
+  try {
+    await Notify.create({
+      userId,
+      type,
+      data: message,
+
+    });
+    console.log(`🔔 Notify: ${message}`);
+  } catch (err) {
+    console.error("❌ Lỗi khi tạo notify:", err.message);
+  }
+}
 
 module.exports = { moveTodayToPastDay, publishAllSchedules };

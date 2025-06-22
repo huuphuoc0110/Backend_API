@@ -126,7 +126,8 @@ const notifySchema = new mongoose.Schema({
     userId:{type: mongoose.Schema.Types.ObjectId, ref: "Users"},
     type: {type: Boolean},
     data: {type: String},
-    id: {type: String}
+    id: {type: String},
+    createAt:{type: Date, default: Date.now}
 });
 
 //Copy id tu truong _id
