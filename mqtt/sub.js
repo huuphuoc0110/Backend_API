@@ -3,6 +3,8 @@ const { Sensors, Gateways, Node, newGateway, Schedules, Devices, Conditions } = 
 const mongoose = require("mongoose");
 const cron = require('node-cron');
 const moment = require('moment-timezone');
+let gotResponseMap
+
 
 const mqtt = require('mqtt');
 const options = {
@@ -12,7 +14,6 @@ const options = {
   username: 'VanTu1208',
   password: 'Thuhoai17'
 };
-let gotResponseMap
 const client = mqtt.connect(options);
 
 // const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
