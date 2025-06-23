@@ -6,7 +6,8 @@ const notifyController = {
 
     getNotify: async (req, res) => {
         try {
-            const notify = await Notify.find()
+            const { userId } = req.query;
+            const notify = await Notify.find({userId});
             res.status(200).json(notify);
         } catch (err) {
             res.status(500).json(err); //HTTP request code
@@ -15,7 +16,8 @@ const notifyController = {
 
     deleteNotify: async (req, res) => {
         try {
-            await Notify.findByIdAndDelete(req.params.id);
+            const { userId } = req.query;
+            await Notify.deleteMany({ userId });
             res.status(200).json("Delete succesfully");
         } catch (err) {
             res.status(500).json(err); //HTTP request code

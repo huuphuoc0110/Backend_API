@@ -6,6 +6,6 @@ const router = require("express").Router();
 router.get("/", verifyApiKey, notifyController.getNotify);
 
 //Replace gateways
-router.delete("/:id", verifyApiKey, notifyController.deleteNotify);
+router.delete("/", verifyApiKey, notifyController.deleteNotify);
 
 module.exports = router;
