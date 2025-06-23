@@ -7,16 +7,16 @@ let gotResponseMap
 
 
 const mqtt = require('mqtt');
-const options = {
-  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-  port: 8883, // Port cho MQTT over TLS (bảo mật)
-  protocol: 'mqtts',
-  username: 'VanTu1208',
-  password: 'Thuhoai17'
-};
-const client = mqtt.connect(options);
+// const options = {
+//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+//   port: 8883, // Port cho MQTT over TLS (bảo mật)
+//   protocol: 'mqtts',
+//   username: 'VanTu1208',
+//   password: 'Thuhoai17'
+// };
+// const client = mqtt.connect(options);
 
-// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 //Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
@@ -125,9 +125,9 @@ async function publishAllSchedules() {
       }
       // Nếu sau 3 lần mà không có phản hồi
       if (!gotResponseMap) {
-        const message = `Thiết bị ${deviceName} (${id}) đã được ${actionNumber ? 'BẬT' : 'TẮT'}`;
+        const message = `Thiết bị ${deviceName} đã được ${actionNumber ? 'BẬT' : 'TẮT'}`;
         console.warn(`❌ Không có phản hồi từ "${deviceName}" sau 3 lần gửi`);
-        createNotify({userId, type: false, message});
+        createNotify({ userId, type: false, message });
       } else if (!schedule.dailyRepeat) {
         try {
           await Schedules.findByIdAndDelete(schedule._id);
@@ -234,9 +234,31 @@ async function publishAllConditions() {
 
       const actionText = nextStatus ? "BẬT" : "TẮT";
       const actionNumber = nextStatus ? "1" : "0";
+      let gotResponseMap = false;
+      
+      for (let i = 1; i <= 3; i++) {
+        if (gotResponseMap) {
+          console.log(`✅ Đã nhận phản hồi từ "${deviceName}", dừng gửi`);
+          break;
+        }
 
-      client.publish(topic, String(actionNumber));
-      console.log(`📡 Giá trị = ${value} (${isWithinRange ? "TRONG" : "NGOÀI"} khoảng) → Gửi lệnh ${actionText} tới ${topic}`);
+        console.log(`📡 [Lần ${i}] Gửi lệnh "${actionText}" tới "${deviceName}" → ${topic}`);
+        client.publish(topic, String(actionNumber));
+
+        // 🕒 Chờ 15 giây trước lần gửi tiếp theo
+        if (i < 3) {
+          await new Promise(resolve => setTimeout(resolve, 15000));
+        }
+
+        // ⚠️ Ở đây bạn nên có logic thật để lắng nghe phản hồi MQTT và cập nhật `gotResponseMap = true`
+      }
+
+      // Nếu sau 3 lần mà không có phản hồi 
+      if (!gotResponseMap) {
+        const message = `Thiết bị ${deviceName} gửi lệnh ${actionNumber === "1" ? 'BẬT' : 'TẮT'}, nhưng không phản hồi sau 3 lần gửi`;
+        console.warn(`❌ Không có phản hồi từ "${deviceName}" sau 3 lần gửi`);
+        createNotify({ userId, type: true, message });
+      }
     }
 
     const allDevices = await Devices.find();
@@ -445,15 +467,15 @@ client.on('message', async (topic, message) => {
           // Cập nhật status
           device.status = statusBool;
           await device.save();
-          const message = `Thiết bị ${device.name} (${id}) đã được ${statusBool ? 'BẬT' : 'TẮT'}`;
+          const message = `Thiết bị ${device.name} đã được ${statusBool ? 'BẬT' : 'TẮT'}`;
           console.log(`✅ ${message}`);
 
           //_________________________________________________________________________________________//
           //Thêm thông báo bật tắt thiết bị thành công
-          createNotify({userId, type: true, message});
+          createNotify({ userId, type: true, message });
         } catch (err) {
           console.error('❌ Lỗi khi cập nhật trạng thái thiết bị:', err);
-          createNotify({userId, type: false, message});
+          createNotify({ userId, type: false, message });
         }
 
       } else {
