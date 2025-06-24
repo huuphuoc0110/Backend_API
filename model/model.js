@@ -35,6 +35,7 @@ const nodeSchema = new mongoose.Schema({
     nodeAddress: {type: String},
     id: {type: String},
     duration: { type: Number, default: 5 },
+    gatewayName: {type: String}
 });
 
 const newGatewaySchema = new mongoose.Schema({
