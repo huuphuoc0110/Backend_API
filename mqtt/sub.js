@@ -440,8 +440,6 @@ client.on('message', async (topic, message) => {
         console.log(`→ ID: ${id}`);
         console.log(`→ Trạng thái thực hiện: ${statusBool ? 'BẬT' : 'TẮT'}`);
 
-        gotResponseMap = true;
-
         try {
           // Tìm gateway và node
           const gateway = await Gateways.findOne({ gatewayName });
@@ -474,6 +472,7 @@ client.on('message', async (topic, message) => {
           //_________________________________________________________________________________________//
           //Thêm thông báo bật tắt thiết bị thành công
           createNotify({ userId, type: true, message });
+          gotResponseMap = true;
         } catch (err) {
           console.error('❌ Lỗi khi cập nhật trạng thái thiết bị:', err);
           createNotify({ userId, type: false, message });
