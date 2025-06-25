@@ -248,7 +248,7 @@ async function publishAllConditions() {
 
         // 🕒 Chờ 15 giây trước lần gửi tiếp theo
         if (i < 3) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          await new Promise(resolve => setTimeout(resolve, 15000));
         }
 
         // ⚠️ Ở đây bạn nên có logic thật để lắng nghe phản hồi MQTT và cập nhật `gotResponseMap = true`
