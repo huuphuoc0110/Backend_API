@@ -7,16 +7,16 @@ let gotResponseMap
 
 
 const mqtt = require('mqtt');
-const options = {
-  host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
-  port: 8883, // Port cho MQTT over TLS (bảo mật)
-  protocol: 'mqtts',
-  username: 'VanTu1208',
-  password: 'Thuhoai17'
-};
-const client = mqtt.connect(options);
+// const options = {
+//   host: '3e35b0e456934dc0bbb79dfe4d03461e.s1.eu.hivemq.cloud',
+//   port: 8883, // Port cho MQTT over TLS (bảo mật)
+//   protocol: 'mqtts',
+//   username: 'VanTu1208',
+//   password: 'Thuhoai17'
+// };
+// const client = mqtt.connect(options);
 
-// const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
 //Hàm tính trung bình data
 function calculateHourlyAverage(todayBlock) {
@@ -105,12 +105,12 @@ async function publishAllSchedules() {
       const nodeAddl = schedule.nodeId.nodeAddl;
       const id = schedule.devicePin;
       const deviceName = schedule.deviceName;
-      const userId = schedule.userId
+      const userId = schedule.gatewayId?.userId
       const actionText = status === true ? "BẬT" : "TẮT";
       const actionNumber = status === true ? "1" : "0";
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${id}/command`;
       gotResponseMap = false;
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 0; i <= 3; i++) {
         if (gotResponseMap) {
           console.log(`✅ Đã nhận phản hồi từ "${deviceName}", dừng gửi`);
           break;
@@ -164,6 +164,7 @@ async function publishAllConditions() {
       const nodeAddh = condition.nodeId?.nodeAddh;
       const nodeAddl = condition.nodeId?.nodeAddl;
 
+      const userId = condition.gatewayId?.userId
       const topic = `${gatewayName}/controls/${nodeAddh}/${nodeAddl}/${devicePin}/command`;
 
       //Lưu trạng thái ban đầu của Devices
@@ -197,7 +198,7 @@ async function publishAllConditions() {
         console.warn(`⚠️ Giá trị sensor không hợp lệ tại condition ${id}`);
         continue;
       }
-
+      console.log(value)
       const isWithinRange =
         minValue !== undefined &&
         maxValue !== undefined &&
@@ -205,7 +206,7 @@ async function publishAllConditions() {
         value <= maxValue;
 
       let nextStatus;
-
+      console.log(isWithinRange)
       if (device.defaultStatus === undefined || device.conditionFlag === undefined) {
         device.defaultStatus = device.status;
         device.conditionFlag = false;
@@ -227,7 +228,7 @@ async function publishAllConditions() {
           device.conditionFlag = false;
           await device.save();
         } else {
-          console.log("Thiết bị ở trạng thái đặt điều, kh cần publish");
+          console.log("Thiết bị ở trạng thái ban đầu, kh cần publish");
           break;
         }
       }
@@ -236,18 +237,18 @@ async function publishAllConditions() {
       const actionNumber = nextStatus ? "1" : "0";
       let gotResponseMap = false;
       
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 0; i <= 3; i++) {
         if (gotResponseMap) {
-          console.log(`✅ Đã nhận phản hồi từ "${deviceName}", dừng gửi`);
+          console.log(`✅ Đã nhận phản hồi từ "${condition.deviceName}", dừng gửi`);
           break;
         }
 
-        console.log(`📡 [Lần ${i}] Gửi lệnh "${actionText}" tới "${deviceName}" → ${topic}`);
+        console.log(`📡 [Lần ${i+1}] Gửi lệnh "${actionText}" tới "${condition.deviceName}" → ${topic}`);
         client.publish(topic, String(actionNumber));
 
         // 🕒 Chờ 15 giây trước lần gửi tiếp theo
         if (i < 3) {
-          await new Promise(resolve => setTimeout(resolve, 15000));
+          await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
         // ⚠️ Ở đây bạn nên có logic thật để lắng nghe phản hồi MQTT và cập nhật `gotResponseMap = true`
@@ -255,9 +256,9 @@ async function publishAllConditions() {
 
       // Nếu sau 3 lần mà không có phản hồi 
       if (!gotResponseMap) {
-        const message = `Thiết bị ${deviceName} gửi lệnh ${actionNumber === "1" ? 'BẬT' : 'TẮT'}, nhưng không phản hồi sau 3 lần gửi`;
-        console.warn(`❌ Không có phản hồi từ "${deviceName}" sau 3 lần gửi`);
-        createNotify({ userId, type: true, message });
+        const message = `Thiết bị ${condition.deviceName} ${actionNumber === "1" ? 'BẬT' : 'TẮT'} theo điều kiện`;
+        console.warn(`❌ Không có phản hồi từ "${condition.deviceName}" sau 3 lần gửi`);
+        createNotify({ userId, type: false, message });
       }
     }
 
@@ -547,13 +548,13 @@ cron.schedule('0 0 * * *', async () => {
 
 async function createNotify({ userId, type, message }) {
   try {
-    await Notify.create({
+    const notify = await Notify.create({
       userId,
       type,
       data: message,
-
     });
     console.log(`🔔 Notify: ${message}`);
+    console.log(notify)
   } catch (err) {
     console.error("❌ Lỗi khi tạo notify:", err.message);
   }
