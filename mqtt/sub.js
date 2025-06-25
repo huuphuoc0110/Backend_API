@@ -236,14 +236,14 @@ async function publishAllConditions() {
       const actionText = nextStatus ? "BẬT" : "TẮT";
       const actionNumber = nextStatus ? "1" : "0";
       let gotResponseMap = false;
-      
-      for (let i = 0; i <= 3; i++) {
+
+      for (let i = 0; i < 3; i++) {
         if (gotResponseMap) {
           console.log(`✅ Đã nhận phản hồi từ "${condition.deviceName}", dừng gửi`);
           break;
         }
 
-        console.log(`📡 [Lần ${i+1}] Gửi lệnh "${actionText}" tới "${condition.deviceName}" → ${topic}`);
+        console.log(`📡 [Lần ${i + 1}] Gửi lệnh "${actionText}" tới "${condition.deviceName}" → ${topic}`);
         client.publish(topic, String(actionNumber));
 
         // 🕒 Chờ 15 giây trước lần gửi tiếp theo
@@ -411,7 +411,17 @@ client.on('message', async (topic, message) => {
 
           sensor.data.today.dataHour = calculateHourlyAverage(sensor.data.today);
 
-          await sensor.save();
+          await Sensors.updateOne({ _id: sensor._id }, {
+            $set: {
+              'data.today.dataHour': calculateHourlyAverage(sensor.data.today)
+            },
+            $push: {
+              'data.today.dataMinute': {
+                time: new Date(),
+                value: Number(value)
+              }
+            }
+          });
           console.log(`✅ Lưu dataMinute cho sensor PIN ${pin}: ${value}`);
         }
         publishAllConditions();
