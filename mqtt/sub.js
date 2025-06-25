@@ -3,7 +3,7 @@ const { Sensors, Gateways, Node, newGateway, Schedules, Devices, Conditions, Not
 const mongoose = require("mongoose");
 const cron = require('node-cron');
 const moment = require('moment-timezone');
-let gotResponseMap
+let gotResponseMap = false;
 
 
 const mqtt = require('mqtt');
@@ -235,7 +235,7 @@ async function publishAllConditions() {
 
       const actionText = nextStatus ? "BẬT" : "TẮT";
       const actionNumber = nextStatus ? "1" : "0";
-      let gotResponseMap = false;
+      gotResponseMap = false;
 
       for (let i = 0; i < 3; i++) {
         if (gotResponseMap) {
